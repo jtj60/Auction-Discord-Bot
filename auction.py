@@ -1,175 +1,353 @@
-import discord    
-from replit import db  
-from state_machine import AuctionMachine                         
-from keep_alive import keep_alive           
-from timer import timer 
-import bid
+from discord.ext import commands
+from replit import db
+from transitions import Machine
+from keep_alive import keep_alive
+from timer import timer
 import draft
-import users
 import embed
+import asyncio
 
-captains = []
-if 'captains' in db.keys():
-  captains = db['captains']
+client = commands.Bot(command_prefix = '#')
 
-teams = []
-if 'teams' in db.keys():
-  teams = db['teams']
-
-players = []
-if 'players' in db.keys():
-  players = db['players']
-
-bids = []
-if 'bids' in db.keys():
-  bids = db['bids']
-
-
-
-class AuctionBot(discord.Client): 
-  def __init__(self, name):
-    captains = []
-    teams = []
-    players = []
-    bids = []
-    self.populate_db()
-
-  def populate_db():
-    if 'captains' in db.keys(): 
-      do stuff
-
-    if 'teams' in db.keys():
-      do more stuff
-
-      etc'
-
-  def add_captain():
-    #to stuff
-    populate_db()
-
-
-
-
-
-
-#del db['captains']
-#del db['bids']
-#del db['players']
-#del db['teams']
-
-
-admin = 411342580887060480 #enter admin discord ID
-
-client = discord.Client()
+@client.event
+async def on_command_error(ctx, error):
+  if isinstance(error, commands.MissingRequiredArgument):
+    await ctx.send('Wrong input, try again.')
 
 @client.event
 async def on_ready():
-  print('We have logged in as {0.user}'.format(client))
+  print('Bot is ready.')
 
-#To recieve messages from users. 
-@client.event
-async def on_message(message):
+class AuctionBot(commands.Cog): 
+  def __init__(self, client):
+    self.start = 10                       #enter start timer
+    self.nom = 30                         #enter nominating timer
+    self.bid = 60                         #enter bidding timer
+    self.admin = 411342580887060480       #enter admin discord ID
+    self.league = 'PST'                   #enter league name
+
+    self.client = client
+    self.current_timer = None
   
-  if message.author == client.user:
-    return
+    self.states = [
+        'asleep',
+        'starting', 
+        'nominating', 
+        'bidding', 
+        'pausing', 
+        'ending',
+    ]
+    self.machine = Machine(model=self, states=self.states, initial='asleep')
+    self.machine.add_transition('start_machine', 'asleep', 'starting')
+    self.machine.add_transition('nom_from_start', 'starting', 'nominating')
+    self.machine.add_transition('bid_from_nom', 'nominating', 'bidding')
+    self.machine.add_transition('nom_from_bid', 'bidding', 'nominating')
+    self.machine.add_transition('end_from_bid', 'bidding', 'ending')
 
-  if message.content.startswith('#ready'):
-    await message.author.send('Submit bids here.')
+    # self.machine.add_transition('pause_from_start', 'starting', 'pausing')
+    # self.machine.add_transition('pause_from_nom', 'nominating', 'pausing')
+    # self.machine.add_transition('pause_from_bid', 'bidding', 'pausing')
+    # self.machine.add_transition('pause_from_end', 'ending', 'pausing')
 
-  if message.content.startswith('#start'):
-    if message.author.id == admin:
-      auction = AuctionMachine('Auction')
-      auction.start_machine()
-      
-      await message.channel.send ('Welcome to the PST Season 25 Draft!')
-      await message.channel.send ('Draft will begin in 10 seconds.')
-      async for sec in timer(1): 
-        await message.channel.send(sec)
-      await message.channel.send('Draft Starting!')
+    # self.machine.add_transition('pause_to_start', 'pausing', 'starting')
+    # self.machine.add_transition('pause_to_nom', 'pausing', 'nominating')
+    # self.machine.add_transition('pause_to_bid', 'pausing', 'bidding')
+    # self.machine.add_transition('pause_to_end', 'pausing', 'ending')
+    self.playerCount
 
-      count = draft.playerCount()
-      while count != 0:
-        auction.nom_from_start()
-      
-      
-      
-      
-      
-      
-      # count = draft.playerCount()
-      # while count != 0:
-      #   await message.channel.send(f'It is PLACEHOLDER turn to nominate. You have 15 seconds')
-        
-      #   async for sec in timer(1): 
-      #     await message.channel.send(sec)
-      #     nominated = False
-      #     if message.content.startswith('#nominate'):
-      #       userInput = message.content
-      #       trash, name = userInput.rsplit(' ')
-      #       player = draft.getPlayer(name)
-      #       nominated = True
-          
-      #     if sec == 1:
-      #       if nominated == False:
-      #         player = draft.nextPlayer()
-      #         await message.channel.send(f'Failed to nominate. {player["name"]} nominated instead. Bidding begins now. You have 60 seconds.')
-      #       else:
-      #         await message.channel.send(f'{player["name"]} nominated. Bidding begins now. You have 60 seconds.')
-        
-      #   async for sec in timer(15): 
-      #     await message.channel.send(sec)
-          
-      #     msg = await client.wait_for('message')
-          
-      #       print('test')
-      #       username = msg.author.name
-      #       amount = msg.content
-      #       print(username)
-      #       print(amount)
-            
-      #       captain = draft.getCaptain(username)
-      #       if captain['dollars'] >= amount:
-      #         bid.addBid(username, amount)
-      #         await message.author.send('Bid submitted.')
-      #       else:
-      #         await message.author.send('Bid failed. Not enough money.')
-          
-      #     if sec == 1:
-      #       await message.channel.send(f'Bidding closed for {player["name"]}.')
-      #       highestBid = bid.bidder()
-      #       cap = highestBid['name']
-      #       cost = highestBid['amount']
-      #       await message.channel.send(f'{cap} purchased {player["name"]} for ${cost}.')
-      #       #update teams here
-      #       users.removePlayer(player['name'])
-      #       count = draft.playerCount()
+    self.captains = []
+    self.teams = []
+    self.players = []
+    self.bids = []
+    self.orders = []
+
+  def populate_db(self):
+    if 'captains' in db.keys(): 
+      self.captains = db['captains']
+    if 'teams' in db.keys():
+      self.teams = db['teams']
+    if 'players' in db.keys():
+      self.players = db['players']
+    if 'bids' in db.keys():
+      self.bids = db['bids']
+    if 'order' in db.keys():
+      self.order = db['order']
+
+  def delete_db():
+    del db['captains']
+    del db['bids']
+    del db['players']
+    del db['teams']
+    del db['order']
+
+  def addCaptain(self, name, dollars):
+    for captain in self.captains:
+      if self.checkCaptain():
+        return False
+    captain = {'name': name, 'dollars': dollars}
+    self.captains.append(captain)
+    self.populate_db()
+    return True
+
+  def removeCaptain(self, name):
+    for captain in self.captains:
+      if self.checkCaptain():
+        self.captains.remove(captain)
+        self.populate_db()
+        return True
+    return False
   
-  if message.content.startswith('#playerlist'):
-    await message.channel.send(embed = embed.playerlist())
+  def checkCaptain(self, name):
+    for captain in self.captains:
+      if captain['name'] == name:
+        return True
+    return False
+
+  def clearCaptains(self):
+    self.captains.clear()
+    self.populate_db()
+
+  def addPlayer(self, name, mmr):
+    for player in self.players:
+      if self.checkPlayer():
+        return False
+    player = {'name': name, 'mmr': mmr}
+    self.players.append(player)
+    self.populate_db()
+    return True
+
+  def removePlayer(self, name):
+    for player in self.players:
+      if self.checkPlayer():
+        self.players.remove(player)
+        self.populate_db()
+        return True
+    return False
+
+  def checkPlayer(self, name):
+    for player in self.players:
+      if player['name'] == name:
+        return True
+    return False
   
-  if message.content.startswith('#captainlist'):
-    await message.channel.send(embed = embed.captainlist())
+  def clearPlayers(self):
+    self.players.clear()
+    self.populate_db()
 
-  if message.content.startswith('#addPlayer'):
-    userInput = message.content
-    trash, name, mmr = userInput.rsplit(' ', 2)
-      
-    flag = users.addPlayer(name, mmr)
-    if flag == False:
-      await message.channel.send('Player added.')
-    else:
-      await message.channel.send('Player not added.')
+  def addBid(self, name, amount):
+    for bid in self.bids:
+      if self.checkBid():
+        return False
+    bid = {'name': name, 'amount': amount}
+    self.bids.append(bid)
+    self.populate_db()
+    return True
 
-  if message.content.startswith('#addCaptain'):
-    name = message.mentions[0].name
-    dollars = 1000
-    flag = users.addCaptain(name, dollars)
-    if flag == False:
-      await message.channel.send('Captain added.')
-    else:
-      await message.channel.send('Captain not added.')
+  def removeBid(self, name):
+    for bid in self.bids:
+      if self.checkBid():
+        self.bids.remove(bid)
+        self.populate_db()
+        return True
+    return False
+
+  def checkBid(self, name):
+    for bid in self.bids:
+      if bid['name'] == name:
+        return True
+    return False
+
+  def clearBids(self):
+    self.bids.clear()
+    self.populate_db()
+
+  def makeOrder(self):
+    for captain in self.order:
+      self.order.append(self.captains[captain])
+      self.order = sorted(self.order, key = lambda x: x['dollars'], reverse = False)
+      self.populate_db()
+  
+  def checkOrder(self, name):
+    for captain in self.order:
+      if self.order['name'] == name:
+        return True
+    return False
+  
+  def updateOrder(self):
+    for captain in self.order:
+      if self.checkOrder():
+        self.order.remove(captain)
+        self.order.append(captain)
+        self.populate_db()
+        return True
+    return False
     
+  async def timer(t):
+    for i in range(t, 0, -1):
+      await asyncio.sleep(1)
+      #do countdown logic
+      while i >= 20:
+        await asyncio.sleep(10)
+        yield i
+      if i <= 5:
+        yield i
+
+  commands.command()
+  async def start(self, ctx):
+    if ctx.message.author == self.admin:
+      self.state_machine.start_machine()
+      await ctx.send(f'Welcome to the {self.league} Blind Vickrey Auction Draft!!')
+      await ctx.send(f'The draft will begin in {self.start} seconds.')
+      async for sec in timer(self.start): 
+        await ctx.send(sec)
+      await ctx.send('Draft starting.')
+      self.playerCount = draft.playerCount()
+
+  def checkNom(self, ctx, nom_timer):
+    if ctx.message.author == self.order['name']: 
+      if self.checkPlayer(ctx.message):
+        await ctx.send(f'{ctx.message} nominated.')
+        nom_timer.cancel()
+        return True
+      else:
+        await ctx.send(f'{ctx.message} does not exist')
+    return False
+        
+  commands.command()
+  async def nominate(self, ctx):
+    if self.machine.state == 'starting':
+      self.machine.nom_from_start()
+      self.current_timer = asyncio.create_task(self.timer(self.nom))
+      try: 
+        self.checkNom(ctx, self.timer)
+        await self.timer
+      except asyncio.CancelledError:
+        pass
+        #discord output
+      finally: 
+        if not self.timer.cancelled():
+          #player auto-nominated
+          #change state
+          #discord output
+          pass
+        else: 
+          #change state
+          pass
+        
+    elif self.machine.state == 'bidding':
+      pass
+    
+    elif self.machine.state == 'nominating':
+      try: 
+        self.checkNom(ctx, self.timer)
+        await self.timer
+      except asyncio.CancelledError:
+        #player nominated
+        #discord output
+        pass
+      finally: 
+        if not self.timer.cancelled():
+          #player auto-nominated
+          #change state
+          #discord output
+          pass
+        else: 
+          #change state
+          pass
+      pass
+      
+  commands.command()
+  async def bid(self, ctx):
+    if self.machine.state == 'bidding':
+      self.current_timer = asyncio.create_task(self.timer(self.nom))
+      try:
+        pass
+      except:
+        pass
+      
+    elif self.machine == 'nominating':
+      pass
+
+    else:
+      pass
+  
+  commands.command()
+  async def pause(self, ctx):
+    pass
+  
+  commands.command()
+  async def end(self, ctx):
+    pass
+
+  commands.command()
+  def runDraft(self):
+    self.start()
+    
+    while self.playerCount != 0:
+      self.nominate()
+      self.bid()
+      self.playerCount = draft.playerCount()
+    
+    self.end()
+
 keep_alive()
+
+client.add_cog(AuctionBot(client))
 
 #BOT TOKEN
 client.run('OTAxMjQ0MzMxOTA0NjIyNTky.YXNDMQ.eYTemC4HYrttRp3I-luGroViwpg')
+
+def setup(bot):
+  bot.add_cog(AuctionBot(bot))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # if message.content.startswith('#playerlist'):
+  #   await message.channel.send(embed = embed.playerlist())
+  
+  # if message.content.startswith('#captainlist'):
+  #   await message.channel.send(embed = embed.captainlist())
+
+  # if message.content.startswith('#addPlayer'):
+  #   userInput = message.content
+  #   trash, name, mmr = userInput.rsplit(' ', 2)
+      
+  #   flag = users.addPlayer(name, mmr)
+  #   if flag == False:
+  #     await message.channel.send('Player added.')
+  #   else:
+  #     await message.channel.send('Player not added.')
+
+  # if message.content.startswith('#addCaptain'):
+  #   name = message.mentions[0].name
+  #   dollars = 1000
+  #   flag = users.addCaptain(name, dollars)
+  #   if flag == False:
+  #     await message.channel.send('Captain added.')
+  #   else:
+  #     await message.channel.send('Captain not added.')
+    
