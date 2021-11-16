@@ -4,10 +4,10 @@ from transitions import Machine
 from keep_alive import keep_alive
 from timer import timer
 import draft
-import embed
+import discord
 import asyncio
 
-client = commands.Bot(command_prefix = '#')
+client = commands.Bot(command_prefix = '$')
 
 @client.event
 async def on_command_error(ctx, error):
@@ -15,8 +15,8 @@ async def on_command_error(ctx, error):
     await ctx.send('Wrong input, try again.')
 
 @client.event
-async def on_ready():
-  print('Bot is ready.')
+async def on_ready(ctx):
+  await ctx.send('Im ready!')
 
 class AuctionBot(commands.Cog): 
   def __init__(self, client):
@@ -53,7 +53,7 @@ class AuctionBot(commands.Cog):
     # self.machine.add_transition('pause_to_nom', 'pausing', 'nominating')
     # self.machine.add_transition('pause_to_bid', 'pausing', 'bidding')
     # self.machine.add_transition('pause_to_end', 'pausing', 'ending')
-    self.playerCount
+    self.playerCount = 0
 
     self.captains = []
     self.teams = []
@@ -79,6 +79,10 @@ class AuctionBot(commands.Cog):
     del db['players']
     del db['teams']
     del db['order']
+
+  commands.command()
+  async def hello(self, ctx):
+    await ctx.send('pog')
 
   def addCaptain(self, name, dollars):
     for captain in self.captains:
@@ -203,7 +207,7 @@ class AuctionBot(commands.Cog):
       await ctx.send('Draft starting.')
       self.playerCount = draft.playerCount()
 
-  def checkNom(self, ctx, nom_timer):
+  async def checkNom(self, ctx, nom_timer):
     if ctx.message.author == self.order['name']: 
       if self.checkPlayer(ctx.message):
         await ctx.send(f'{ctx.message} nominated.')
@@ -289,65 +293,14 @@ class AuctionBot(commands.Cog):
       self.playerCount = draft.playerCount()
     
     self.end()
+  
 
-keep_alive()
+
+#keep_alive()
 
 client.add_cog(AuctionBot(client))
-
 #BOT TOKEN
-client.run('OTAxMjQ0MzMxOTA0NjIyNTky.YXNDMQ.eYTemC4HYrttRp3I-luGroViwpg')
+client.run('')
 
-def setup(bot):
-  bot.add_cog(AuctionBot(bot))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  # if message.content.startswith('#playerlist'):
-  #   await message.channel.send(embed = embed.playerlist())
-  
-  # if message.content.startswith('#captainlist'):
-  #   await message.channel.send(embed = embed.captainlist())
-
-  # if message.content.startswith('#addPlayer'):
-  #   userInput = message.content
-  #   trash, name, mmr = userInput.rsplit(' ', 2)
-      
-  #   flag = users.addPlayer(name, mmr)
-  #   if flag == False:
-  #     await message.channel.send('Player added.')
-  #   else:
-  #     await message.channel.send('Player not added.')
-
-  # if message.content.startswith('#addCaptain'):
-  #   name = message.mentions[0].name
-  #   dollars = 1000
-  #   flag = users.addCaptain(name, dollars)
-  #   if flag == False:
-  #     await message.channel.send('Captain added.')
-  #   else:
-  #     await message.channel.send('Captain not added.')
-    
+#def setup(bot):
+ #  bot.add_cog(AuctionBot(bot))
