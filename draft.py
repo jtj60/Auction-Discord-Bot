@@ -20,7 +20,6 @@ class Draft():
     players = sorted(players, key = lambda x: x['mmr'], reverse = True)
     return players[0]
   
-
   def getCaptain(name):
     captains = db['captains']
     for captain in captains:
