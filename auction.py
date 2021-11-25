@@ -1,20 +1,24 @@
+import asyncio
+import os
+
+from dotenv import load_dotenv
+# This has to come first because it patches the env, and the replit-db looks for REPLIT_DB_URL in the env
+load_dotenv()
 from discord.ext import commands
 from replit import db
 from transitions import Machine
-from keep_alive import keep_alive
+
 import draft
 import embed
-import asyncio
 import playerlist_util
 from lot import Lot
+from keep_alive import keep_alive
 
 client = commands.Bot(command_prefix = '$')
 
 @client.event
 async def on_ready():
   print('Bot is ready.')
-
-
 
 async def timer(t):
   for i in range(t, 0, -1):
@@ -25,6 +29,30 @@ async def timer(t):
     if i <= 5:
       yield i
 
+
+class NominationTimer:
+  def __init__(self, t, captain_name, ctx):
+    self.t = t
+    self.captain_name = captain_name
+    self.ctx = ctx
+    self.cancelled = False
+
+  async def run(self):
+    for i in range(self.t, 0, -1):
+      if self.cancelled:
+        raise asyncio.CancelledError()
+
+      await asyncio.sleep(1)
+      if i == 10:
+        await self.ctx.send(f'{self.captain_name} has {i} seconds left to nominate a player.')
+      if i == 5:
+        await self.ctx.send(f'{self.captain_name} has {i} seconds left to nominate a player.')
+
+  def cancel(self):
+    self.cancelled = True
+
+
+
 async def coroutine_wrapper(async_gen, args):
   try:
     print(tuple([i async for i in async_gen(args)]))
@@ -32,7 +60,6 @@ async def coroutine_wrapper(async_gen, args):
     print(tuple([(i, j) async for i, j in async_gen(args)]))
 
 CAPTAIN_NOMINATE_TIMEOUT = 30
-
 
 
 class AuctionBot(commands.Cog): 
@@ -195,7 +222,6 @@ class AuctionBot(commands.Cog):
       return True
     return False
 
-
   @commands.command()
   async def start(self, ctx):
     if self.is_admin(ctx):
@@ -256,11 +282,10 @@ class AuctionBot(commands.Cog):
     self.current_lot = Lot(nominated_player_name, nominated_on_behalf_of_captain)
     return self.current_lot
 
-  async def _autonominate(self, ctx):
+  async def _autonominate(self, ctx, next_eligible_captain):
     players_by_mmr = sorted(db['players'], key=lambda x: x['mmr'], reverse=True)
     player_to_autonominate = players_by_mmr[0]
-    next_eligible_captain = await self.get_next_captain()
-    self.current_lot = Lot(player_to_nominate['name'], next_eligible_captain['name'])
+    self.current_lot = Lot(player_to_autonominate['name'], next_eligible_captain['name'])
     return self.current_lot
     
   @commands.command()
@@ -279,12 +304,16 @@ class AuctionBot(commands.Cog):
       if new_lot is None:
         await ctx.send("Invalid nomination, starting auto-nom timer")
         if self.current_timer is None:
-          self.current_timer = asyncio.create_task(coroutine_wrapper(timer(CAPTAIN_NOMINATE_TIMEOUT)))
-          await self.current_timer
-          new_lot = await self._autonominate(ctx) 
+          next_elibible_captain = await self.get_next_captain()
+          self.current_timer = NominationTimer(CAPTAIN_NOMINATE_TIMEOUT, next_elibible_captain['name'], ctx)
+          await self.current_timer.run()
+          self.current_time = None
+          new_lot = await self._autonominate(ctx, next_elibible_captain) 
           await ctx.send(f"Timer expired. Auto-nominator has nominated {new_lot.player} on behalf of {new_lot.nominator}")
-      else:
-        self.machine.bid_from_nom()
+
+      # We have a nomination, run the lot
+      self.machine.bid_from_nom()
+      print(f"Starting lot {self.current_lot.to_dict()}")
       async for time_remaining in self.current_lot.run_lot(initial_timer=60):
         if time_remaining > 0 and time_remaining % 10 == 0:
           await ctx.send(f'{time_remaining} seconds left for player {self.current_lot.player}')
@@ -292,7 +321,9 @@ class AuctionBot(commands.Cog):
       await ctx.send(str(winning_bid))
       self.rotateCaptainList()
       self.machine.nom_from_bid()
+
     except asyncio.CancelledError:
+      print("Nomination timer cancelled successfully")
       pass
       
   @commands.command()
@@ -373,6 +404,15 @@ class AuctionBot(commands.Cog):
     await ctx.send('Uploaded test players')
 
   @commands.command()
+  async def reset_captains_list_order(self, ctx):
+    if not self.is_admin(ctx):
+      return
+    captains = db['captains']
+    sorted_captains = sorted(captains, key=lambda x: x['dollars'], reverse=True)
+    self.captains = sorted_captains
+    db['captains'] = sorted_captains
+
+  @commands.command()
   async def DELETE(self, ctx):
     if self.is_admin(ctx):
       await ctx.send('Are you sure you want to delete the database? y or n.')
@@ -384,7 +424,7 @@ class AuctionBot(commands.Cog):
         print('test')
         await ctx.send('Databases Deleted. Restarting Bot.')
         await ctx.bot.logout()
-        await ctx.login('bot token here', bot=True)
+        await ctx.login(os.getenv('DISCORD_AUTH_TOKEN'), bot=True)
       elif msg.content.lower() == 'n':
         await ctx.send('Databases not deleted.')
       else:
@@ -397,4 +437,5 @@ if __name__ == '__main__':
   client.add_cog(AuctionBot(client, debug=True))
   
   #BOT TOKEN
-  client.run('bot token here')
+  print(os.getenv('DISCORD_AUTH_TOKEN'))
+  client.run(os.getenv('DISCORD_AUTH_TOKEN'))
