@@ -384,7 +384,7 @@ class AuctionBot(commands.Cog):
         print('test')
         await ctx.send('Databases Deleted. Restarting Bot.')
         await ctx.bot.logout()
-        await ctx.login('OTAxMjQ0MzMxOTA0NjIyNTky.YXNDMQ.TQ3L0okK99Ka69VLkALuVCDX3Uo', bot=True)
+        await ctx.login('bot token here', bot=True)
       elif msg.content.lower() == 'n':
         await ctx.send('Databases not deleted.')
       else:
