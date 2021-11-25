@@ -397,4 +397,4 @@ if __name__ == '__main__':
   client.add_cog(AuctionBot(client, debug=True))
   
   #BOT TOKEN
-  client.run('OTAxMjQ0MzMxOTA0NjIyNTky.YXNDMQ.TQ3L0okK99Ka69VLkALuVCDX3Uo')
+  client.run('bot token here')
