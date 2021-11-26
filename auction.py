@@ -9,6 +9,7 @@ from replit import db
 from transitions import Machine
 
 from draft import Auction, AuctionValidationError, ClientMessageType
+from draft import ADMIN_IDS
 import embed
 import playerlist_util
 from lot import Lot
@@ -150,7 +151,7 @@ class AuctionBot(commands.Cog):
     db['players'] = self.players
 
   def is_admin(self, ctx):
-    if ctx.message.author.id in self.admins or self.debug:
+    if ctx.message.author.id in ADMIN_IDS or self.debug:
       return True
     return False
 
@@ -278,19 +279,10 @@ class AuctionBot(commands.Cog):
 
   @commands.command()
   async def upload_test_lists(self, ctx):
-    playerlist = playerlist_util.parse_playerlist_csv('test_playerlist.csv')
-    captainlist = playerlist_util.parse_captainlist_csv('test_captainlist.csv')
-    await ctx.send('Starting test upload')
-
-    for captain in captainlist:
-      self.addCaptain(captain['name'], captain['captain_bank'])
-
-    await ctx.send('Uploaded test captains')
-
-    for player in playerlist:
-      self.addPlayer(player['name'], player['draft_value'])
-
-    await ctx.send('Uploaded test players')
+    if not self.is_admin(ctx):
+      return
+    self.auction.bootstrap_from_testlists()
+    await ctx.send('Test lists uploaded')
 
   @commands.command()
   async def reset_captains_list_order(self, ctx):

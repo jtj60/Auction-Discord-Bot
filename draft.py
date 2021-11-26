@@ -4,6 +4,7 @@ from transitions import Machine
 
 from collections import namedtuple
 from lot import Lot
+import playerlist_util
 
 class ClientMessageType:
   CHANNEL_MESSAGE = 0
@@ -12,6 +13,11 @@ class ClientMessageType:
 
 ClientMessage = namedtuple('ClientMessage', ['type', 'data'])
 
+ADMIN_IDS = [
+  411342580887060480,  # toth
+  181700384279101440,  # fspoon
+]
+
 class AuctionValidationError(Exception):
   def __init__(self, client_message):
     super().__init__()
@@ -19,15 +25,12 @@ class AuctionValidationError(Exception):
 
 class Auction:
   def __init__(self, db=None):
+    self.debug = False
     if db is not None:
       self.db = db
     else:
       self.db = replit_db
 
-    self.admins = [
-      411342580887060480,  # toth
-      181700384279101440,  # fspoon
-    ]
     self.states = [
         'asleep',
         'starting', 
@@ -120,12 +123,23 @@ class Auction:
     self.db['players'] = self.players
 
   def is_admin(self, message):
-    if message.author.id in self.admins or self.debug:
+    if message.author.id in ADMIN_IDS or self.debug:
       return True
     return False
 
   def get_next_captain(self):
     return self.db['captains'][0]
+
+  def bootstrap_from_testlists(self):
+    playerlist = playerlist_util.parse_playerlist_csv('test_playerlist.csv')
+    captainlist = playerlist_util.parse_captainlist_csv('test_captainlist.csv')
+
+    for captain in captainlist:
+      self.addCaptain(captain['name'], captain['captain_bank'])
+
+    for player in playerlist:
+      self.addPlayer(player['name'], player['draft_value'])
+
 
   def start(self, message):
     if self.is_admin(message):
