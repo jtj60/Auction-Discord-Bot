@@ -59,33 +59,8 @@ class AuctionBot(commands.Cog):
     self.client = client
     self.current_timer = None
     self.debug = debug
-    self.current_lot = None
     self.auction = Auction()
   
-    self.states = [
-        'asleep',
-        'starting', 
-        'nominating', 
-        'bidding', 
-        'pausing', 
-        'ending',
-    ]
-    self.machine = Machine(states=self.states, initial='asleep')
-    self.machine.add_transition('start_machine', 'asleep', 'starting')
-    self.machine.add_transition('nom_from_start', 'starting', 'nominating')
-    self.machine.add_transition('bid_from_nom', 'nominating', 'bidding')
-    self.machine.add_transition('nom_from_bid', 'bidding', 'nominating')
-    self.machine.add_transition('end_from_bid', 'bidding', 'ending')
-
-    # self.machine.add_transition('pause_from_start', 'starting', 'pausing')
-    # self.machine.add_transition('pause_from_nom', 'nominating', 'pausing')
-    # self.machine.add_transition('pause_from_bid', 'bidding', 'pausing')
-    # self.machine.add_transition('pause_from_end', 'ending', 'pausing')
-
-    # self.machine.add_transition('pause_to_start', 'pausing', 'starting')
-    # self.machine.add_transition('pause_to_nom', 'pausing', 'nominating')
-    # self.machine.add_transition('pause_to_bid', 'pausing', 'bidding')
-    # self.machine.add_transition('pause_to_end', 'pausing', 'ending')
     self.playerCount = 0
 
     self.captains = []
