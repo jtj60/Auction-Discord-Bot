@@ -9,6 +9,9 @@ async def timer(t):
     if i <= 5:
       yield 
 
+LOT_TIMING_STRUCTURE = [60, 45, 30, 30, 15, 15, 15]
+
+
 class Lot:
   def __init__(self, player, nominator, current_bids=None):
     if current_bids is None:
@@ -43,10 +46,16 @@ class Lot:
         reverse=True,
       )[0]
       return dict(
-        captain=winning_bid['captain'],
+        captain=winning_bid['captain_name'],
         amount=winning_bid['amount'],
         player=self.player,
       )
+
+  async def add_bid(self, bid):
+    # TODO: Enforce minimum bid difference
+    self.current_bids.append(bid)
+    time_remaining_idx = len(self.current_bids) - 1
+    self.time_remaining = LOT_TIMING_STRUCTURE[min(time_remaining_idx, len(LOT_TIMING_STRUCTURE) - 1)]
 
   async def run_lot(self, initial_timer=60):
     self.time_remaining = initial_timer

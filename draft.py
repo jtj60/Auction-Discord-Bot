@@ -1,5 +1,12 @@
 from replit import db
 
+from transitions import Machine
+class Auction:
+
+  def __init__(self):
+    pass
+
+
 class Draft():
 
   def playerCount():

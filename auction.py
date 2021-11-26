@@ -20,15 +20,6 @@ client = commands.Bot(command_prefix = '$')
 async def on_ready():
   print('Bot is ready.')
 
-async def timer(t):
-  for i in range(t, 0, -1):
-    await asyncio.sleep(1)
-    #do countdown logic
-    while i >= 20 and i % 20 == 0:
-      yield i
-    if i <= 5:
-      yield i
-
 
 class NominationTimer:
   def __init__(self, t, captain_name, ctx):
@@ -51,15 +42,7 @@ class NominationTimer:
   def cancel(self):
     self.cancelled = True
 
-
-
-async def coroutine_wrapper(async_gen, args):
-  try:
-    print(tuple([i async for i in async_gen(args)]))
-  except ValueError:
-    print(tuple([(i, j) async for i, j in async_gen(args)]))
-
-CAPTAIN_NOMINATE_TIMEOUT = 30
+CAPTAIN_NOMINATION_TIMEOUT = 30
 
 
 class AuctionBot(commands.Cog): 
@@ -305,9 +288,9 @@ class AuctionBot(commands.Cog):
         await ctx.send("Invalid nomination, starting auto-nom timer")
         if self.current_timer is None:
           next_elibible_captain = await self.get_next_captain()
-          self.current_timer = NominationTimer(CAPTAIN_NOMINATE_TIMEOUT, next_elibible_captain['name'], ctx)
+          self.current_timer = NominationTimer(CAPTAIN_NOMINATION_TIMEOUT, next_elibible_captain['name'], ctx)
           await self.current_timer.run()
-          self.current_time = None
+          self.current_timer = None
           new_lot = await self._autonominate(ctx, next_elibible_captain) 
           await ctx.send(f"Timer expired. Auto-nominator has nominated {new_lot.player} on behalf of {new_lot.nominator}")
 
@@ -325,22 +308,50 @@ class AuctionBot(commands.Cog):
     except asyncio.CancelledError:
       print("Nomination timer cancelled successfully")
       pass
+
+  async def _validate_captain(self, ctx, message):
+    message_parts = ctx.message.content.split()
+    captain_name = message.author.name
+    if len(message_parts) > 2:
+      captain_name = message_parts[2]
+      if not self.is_admin(ctx):
+        print(f"Couldn't admin override {captain_name}, not admin")
+        return None
+      if not self.checkCaptain(captain_name):
+        print(f"Couldn't admin override {captain_name}, not a captain")
+        return None
+    return [captain for captain in db['captains'] if captain['name'] == captain_name][0]
+
+  async def _validate_bid_amount(self, ctx, captain):
+    message_parts = ctx.message.content.split()
+    if len(message_parts) < 2:
+      return None
+    try:
+      bid_amount = int(message_parts[1])
+    except ValueError:
+      return None
+    if bid_amount < 0:
+      return None
+
+    if bid_amount > captain['dollars']:
+      await ctx.send(f'{captain["name"]} only has ${captain["dollars"]}')
+      return None
+    return bid_amount
       
   @commands.command()
   async def bid(self, ctx):
-    if self.machine.state == 'bidding':
-      self.current_timer = asyncio.create_task(self.timer(self.nom))
-      try:
-        self.checkNom(ctx, self.timer)
-        await self.timer
-      except :
-        pass
-      
-    elif self.machine == 'nominating':
-      pass
-
-    else:
-      pass
+    if self.machine.state != 'bidding':
+      print(f"Received bid in state {self.machine.state}, ignoring")
+      return
+    captain = await self._validate_captain(ctx, ctx.message)
+    bid_amount = await self._validate_bid_amount(ctx, captain)
+    if bid_amount is None:
+      # TODO: React to discord message with a thumbs down
+      return
+    if not self.current_lot:
+      print("This shouldn't happen, in bidding state but no current lot")
+    # TODO: React to discord message for confirmation
+    await self.current_lot.add_bid(dict(captain_name=captain['name'], amount=bid_amount))
   
   @commands.command()
   async def pause(self, ctx):
