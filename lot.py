@@ -51,16 +51,15 @@ class Lot:
         player=self.player,
       )
 
-  async def add_bid(self, bid):
+  def add_bid(self, bid):
     # TODO: Enforce minimum bid difference
     self.current_bids.append(bid)
     time_remaining_idx = len(self.current_bids) - 1
     self.time_remaining = LOT_TIMING_STRUCTURE[min(time_remaining_idx, len(LOT_TIMING_STRUCTURE) - 1)]
 
-  async def run_lot(self, initial_timer=60):
+  def run_lot(self, initial_timer=60):
     self.time_remaining = initial_timer
     while self.time_remaining > 0:
-      await asyncio.sleep(1)
       self.time_remaining = self.time_remaining - 1
       # TODO: only yield sometimes?
       yield self.time_remaining

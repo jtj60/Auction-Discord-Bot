@@ -8,7 +8,7 @@ from discord.ext import commands
 from replit import db
 from transitions import Machine
 
-import draft
+from draft import Auction, AuctionValidationError, ClientMessageType
 import embed
 import playerlist_util
 from lot import Lot
@@ -60,6 +60,7 @@ class AuctionBot(commands.Cog):
     self.current_timer = None
     self.debug = debug
     self.current_lot = None
+    self.auction = Auction()
   
     self.states = [
         'asleep',
@@ -173,33 +174,6 @@ class AuctionBot(commands.Cog):
     self.players.clear()
     db['players'] = self.players
 
-  def addBid(self, name, amount):
-    for bid in self.bids:
-      if self.checkBid():
-        return False
-    bid = {'name': name, 'amount': amount}
-    self.bids.append(bid)
-    db['bids'] = self.bids
-    return True
-
-  def removeBid(self, name):
-    for bid in self.bids:
-      if self.checkBid():
-        self.bids.remove(bid)
-        db['bids'] = self.bids
-        return True
-    return False
-
-  def checkBid(self, name):
-    for bid in self.bids:
-      if bid['name'] == name:
-        return True
-    return False
-
-  def clearBids(self):
-    self.bids.clear()
-    db['bids'] = self.bids
-
   def is_admin(self, ctx):
     if ctx.message.author.id in self.admins or self.debug:
       return True
@@ -207,70 +181,33 @@ class AuctionBot(commands.Cog):
 
   @commands.command()
   async def start(self, ctx):
-    if self.is_admin(ctx):
-      self.populate_from_db()
-      self.machine.start_machine()
+    try:
+      self.auction.start(ctx.message)
       await ctx.send(f'Welcome to the {self.league} Blind Vickrey Auction Draft!!')
       await ctx.send(f'The draft will begin in {self.start} seconds.')
-      # async for sec in timer(self.start): 
-      #   await ctx.send(sec)
       await ctx.send('Draft starting.')
-      #self.playerCount = draft.playerCount()
-    else:
-      await ctx.send('UNAUTHORIZED ACCESS')
-
-  async def checkNom(self, ctx, nom_timer):
-    self.captains = db['captains']
-    cap = self.captains[0]
-    if ctx.message.author.name == cap['name']:
-      if self.checkPlayer(ctx.message):
-        await ctx.send(f'{ctx.message} nominated.')
-        nom_timer.cancel()
-        return True
-      else:
-        await ctx.send(f'{ctx.message} does not exist')
-    return False
-
-  async def get_next_captain(self):
-    return db['captains'][0]
+    except AuctionValidationError as e:
+      if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
+        await ctx.send(e.client_message.data)
 
   async def _nominate(self, ctx):
     message_parts = ctx.message.content.split()
     if not message_parts:
       return None
 
-    nominated_player_name = message_parts[1]
-    # TODO: Make sure this author was allowed to nominate
-    nominated_on_behalf_of_captain = ctx.message.author.name
-    if not self.checkPlayer(nominated_player_name):
-      await ctx.send(f"Can't nominate {nominated_player_name}, they don't exist in db")
+    try:
+      new_lot = self.auction.nominate(ctx.message)
+    except AuctionValidationError as e:
+      await ctx.send(e.client_message.data)
       return None
-
-    if len(message_parts) > 2:
-      nominated_on_behalf_of_captain = message_parts[2]
-      if not self.is_admin(ctx):
-        await ctx.send(f"Can't nominate {nominated_player_name} on behalf of {nominated_on_behalf_of_captain}, not admin")
-      if not self.checkCaptain(nominated_on_behalf_of_captain):
-        await ctx.send(f"Can't nominate {nominated_player_name} on behalf of {nominated_on_behalf_of_captain}, not a captain")
-    else:
-      next_eligible_captain = await self.get_next_captain()
-      if nominated_on_behalf_of_captain != next_eligible_captain['name']:
-        ctx.send(f'{nominated_on_behalf_of_captain} is not eligible to nominate at this time')
 
     # Someone was waiting on a successful nomination, let them know it's done
     if self.current_timer is not None:
       self.current_timer.cancel()
       self.current_timer = None
 
-    self.current_lot = Lot(nominated_player_name, nominated_on_behalf_of_captain)
-    return self.current_lot
+    return new_lot
 
-  async def _autonominate(self, ctx, next_eligible_captain):
-    players_by_mmr = sorted(db['players'], key=lambda x: x['mmr'], reverse=True)
-    player_to_autonominate = players_by_mmr[0]
-    self.current_lot = Lot(player_to_autonominate['name'], next_eligible_captain['name'])
-    return self.current_lot
-    
   @commands.command()
   async def nominate(self, ctx):
     if self.machine.state == 'starting':
@@ -287,71 +224,37 @@ class AuctionBot(commands.Cog):
       if new_lot is None:
         await ctx.send("Invalid nomination, starting auto-nom timer")
         if self.current_timer is None:
-          next_elibible_captain = await self.get_next_captain()
+          next_elibible_captain = self.auction.get_next_captain()
           self.current_timer = NominationTimer(CAPTAIN_NOMINATION_TIMEOUT, next_elibible_captain['name'], ctx)
           await self.current_timer.run()
           self.current_timer = None
-          new_lot = await self._autonominate(ctx, next_elibible_captain) 
+          new_lot = self.auction.autonominate(next_elibible_captain)
           await ctx.send(f"Timer expired. Auto-nominator has nominated {new_lot.player} on behalf of {new_lot.nominator}")
 
       # We have a nomination, run the lot
-      self.machine.bid_from_nom()
-      print(f"Starting lot {self.current_lot.to_dict()}")
-      async for time_remaining in self.current_lot.run_lot(initial_timer=60):
+      print(f"Starting lot {self.auction.current_lot.to_dict()}")
+      for time_remaining in self.auction.run_current_lot():
+        await asyncio.sleep(1)
         if time_remaining > 0 and time_remaining % 10 == 0:
-          await ctx.send(f'{time_remaining} seconds left for player {self.current_lot.player}')
-      winning_bid = self.current_lot.winning_bid
+          await ctx.send(f'{time_remaining} seconds left for player {self.auction.current_lot.player}')
+      winning_bid = self.auction.current_lot.winning_bid
       await ctx.send(str(winning_bid))
-      self.rotateCaptainList()
-      self.machine.nom_from_bid()
+      self.auction.give_lot_to_winner()
 
     except asyncio.CancelledError:
       print("Nomination timer cancelled successfully")
       pass
 
-  async def _validate_captain(self, ctx, message):
-    message_parts = ctx.message.content.split()
-    captain_name = message.author.name
-    if len(message_parts) > 2:
-      captain_name = message_parts[2]
-      if not self.is_admin(ctx):
-        print(f"Couldn't admin override {captain_name}, not admin")
-        return None
-      if not self.checkCaptain(captain_name):
-        print(f"Couldn't admin override {captain_name}, not a captain")
-        return None
-    return [captain for captain in db['captains'] if captain['name'] == captain_name][0]
-
-  async def _validate_bid_amount(self, ctx, captain):
-    message_parts = ctx.message.content.split()
-    if len(message_parts) < 2:
-      return None
-    try:
-      bid_amount = int(message_parts[1])
-    except ValueError:
-      return None
-    if bid_amount < 0:
-      return None
-
-    if bid_amount > captain['dollars']:
-      await ctx.send(f'{captain["name"]} only has ${captain["dollars"]}')
-      return None
-    return bid_amount
       
   @commands.command()
   async def bid(self, ctx):
-    if self.machine.state != 'bidding':
-      print(f"Received bid in state {self.machine.state}, ignoring")
-      return
-    captain = await self._validate_captain(ctx, ctx.message)
-    bid_amount = await self._validate_bid_amount(ctx, captain)
-    if bid_amount is None:
-      # TODO: React to discord message with a thumbs down
-      return
-    if not self.current_lot:
-      print("This shouldn't happen, in bidding state but no current lot")
-    # TODO: React to discord message for confirmation
-    await self.current_lot.add_bid(dict(captain_name=captain['name'], amount=bid_amount))
+    try:
+      client_message = self.auction.bid(ctx.message)
+      # TODO: React with client message
+    except AuctionValidationError as e:
+      if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
+        await ctx.send(e.client_message.data)
+      return None
   
   @commands.command()
   async def pause(self, ctx):
