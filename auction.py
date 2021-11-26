@@ -213,6 +213,7 @@ class AuctionBot(commands.Cog):
 
       # We have a nomination, run the lot
       print(f"Starting lot {self.auction.current_lot.to_dict()}")
+      #add player info embed here
       for time_remaining in self.auction.run_current_lot():
         await asyncio.sleep(1)
         if time_remaining > 0 and time_remaining % 10 == 0:
@@ -254,6 +255,10 @@ class AuctionBot(commands.Cog):
   @commands.command()
   async def captainlist(self, ctx):
     await ctx.send(embed = embed.captainlist())
+  
+  @commands.command()
+  async def playerinfo(self, ctx):
+    await ctx.send(embed = embed.player_info(ctx.message))
 
   @commands.command()
   async def player(self, ctx):

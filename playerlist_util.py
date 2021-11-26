@@ -14,6 +14,17 @@ def parse_playerlist_csv(filename):
 
       player['name'] = row['name']
       player['draft_value'] = float(sum(fractions.Fraction(s) for s in row['Draft Value'].split()))
+      player['badge'] = row['Medal']
+      player['opendota'] = row['opendota']
+      player['dotabuff'] = row['dotabuff']
+      player['statement'] = row['statement']
+      player['pos1'] = row['Pos 1']
+      player['pos2'] = row['Pos 2 ']
+      player['pos3'] = row['Pos 3']
+      player['pos4'] = row['Pos 4']
+      player['pos5'] = row['Pos 5']
+      player['hero_drafter'] = row['Hero Drafter']
+      
 
       players.append(player)
     return sorted(players, key=lambda x: x['draft_value'], reverse=True)

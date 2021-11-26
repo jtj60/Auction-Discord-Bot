@@ -31,4 +31,35 @@ def captainlist():
   embed.add_field(name= 'Dollars:', value = captain_dollars_string)
   return embed
 
-  
+def player_info(message):
+  players = db['players']
+  message_parts = message.content.split()
+  preferences = ['Pos 1: ', 'Pos 2: ', 'Pos 3: ', 'Pos 4: ', 'Pos 5: ', 'Hero Drafter: ']
+  pref_string = '\n'.join(preferences)
+  name = message_parts[1]
+  for player in players:
+    if player['name'] == name:
+      ratings = [
+        player['pos1'],
+        player['pos2'],
+        player['pos3'],
+        player['pos4'],
+        player['pos5'],
+        player['hero_drafter'], 
+        ]
+      ratings_string = '\n'.join(ratings)
+      embed = discord.Embed(title = 'Player Info: ', color = 0xe91e63)
+      embed.add_field(name = 'Name: ', value = player['name'], inline = True)
+      embed.add_field(name = 'Badge: ', value = player['badge'], inline = True)
+      embed.add_field(name = 'Opendota: ', value = player['opendota'], inline = False)
+      embed.add_field(name = 'Dotabuff: ', value = player['dotabuff'], inline = False)
+      embed.add_field(name = 'Preferences: ', value = pref_string, inline = True)
+      embed.add_field(name = '(1-5) ', value = ratings_string, inline = True )
+      # embed.add_field(name = 'Position 1: ', value = player['pos1'])
+      # embed.add_field(name = 'Position 2: ', value = player['pos2'])
+      # embed.add_field(name = 'Position 3: ', value = player['pos3'])
+      # embed.add_field(name = 'Position 4: ', value = player['pos4'])
+      # embed.add_field(name = 'Position 5: ', value = player['pos5'])T
+      # embed.add_field(name = 'Hero Drafter', value = player['hero_drafter'])
+      embed.add_field(name = 'Statement: ', value = player['statement'], inline = False)
+      return embed

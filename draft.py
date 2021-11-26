@@ -96,13 +96,27 @@ class Auction:
     self.captains = []
     self.db['captains'] = self.captains
 
-  def addPlayer(self, name, mmr):
+  def addPlayer(self, name, mmr, badge, opendota, dotabuff, statement,                                              pos1, pos2, pos3, pos4, pos5, hero_drafter):
     if self.checkPlayer(name):
       return False
-    player = {'name': name, 'mmr': mmr}
+    player = {
+      'name': name, 
+      'mmr': mmr, 
+      'badge': badge,
+      'opendota': opendota,
+      'dotabuff': dotabuff,
+      'statement': statement,
+      'pos1': pos1,
+      'pos2': pos2,
+      'pos3': pos3,
+      'pos4': pos4,
+      'pos5': pos5,
+      'hero_drafter': hero_drafter
+      }
     self.players.append(player)
     self.db['players'] = self.players
     return True
+
 
   def removePlayer(self, name):
     # TODO: This function clearly does not work
@@ -138,8 +152,7 @@ class Auction:
       self.addCaptain(captain['name'], captain['captain_bank'])
 
     for player in playerlist:
-      self.addPlayer(player['name'], player['draft_value'])
-
+      self.addPlayer(player['name'], player['draft_value'], player['badge'], player['opendota'], player['dotabuff'], player['statement'], player['pos1'], player['pos2'], player['pos3'], player['pos4'], player['pos5'], player['hero_drafter'])
 
   def start(self, message):
     if self.is_admin(message):
