@@ -190,14 +190,14 @@ class AuctionBot(commands.Cog):
 
   @commands.command()
   async def nominate(self, ctx):
-    if self.machine.state == 'starting':
-      self.machine.nom_from_start()
+    # if self.machine.state == 'starting':
+    #   self.machine.nom_from_start()
         
-    elif self.machine.state == 'bidding':
-      return
+    # elif self.machine.state == 'bidding':
+    #   return
     
-    elif self.machine.state == 'nominating':
-      pass
+    # elif self.machine.state == 'nominating':
+    #   pass
 
     try: 
       new_lot = await self._nominate(ctx)
@@ -213,7 +213,7 @@ class AuctionBot(commands.Cog):
 
       # We have a nomination, run the lot
       print(f"Starting lot {self.auction.current_lot.to_dict()}")
-      #add player info embed here
+      await ctx.send(embed = embed.player_info(ctx.message))
       for time_remaining in self.auction.run_current_lot():
         await asyncio.sleep(1)
         if time_remaining > 0 and time_remaining % 10 == 0:
