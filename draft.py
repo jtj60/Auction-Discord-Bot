@@ -259,3 +259,74 @@ class Auction:
     
     self.rotateCaptainList()
     self.machine.nom_from_bid()
+
+  def checkNum(self, number):
+    if type(number) == int or type(number) == float:
+      return True
+    return False
+  
+  def player(self, message):
+    if self.is_admin(message):
+      message_parts = message.content.split()
+      player_name = message_parts[1]
+      if self.checkPlayer(player_name):
+        raise AuctionValidationError(ClientMessage(
+          type=ClientMessageType.CHANNEL_MESSAGE,
+          data=f"Can't add {player_name}, that player is already in the system."
+          ))
+      if len(message_parts) > 2:
+        player_mmr = message_parts[2]
+        if not self.checkNum(player_mmr):
+          raise AuctionValidationError(ClientMessage(
+            type=ClientMessageType.CHANNEL_MESSAGE,
+            data=f"Can't add {player_name}, improper MMR formatting."
+            ))
+        if not self.addPlayer(player_name, player_mmr):
+          raise AuctionValidationError(ClientMessage(
+            type=ClientMessageType.CHANNEL_MESSAGE,
+            data=f"Error adding {player_name}."
+            ))
+      else:
+        raise AuctionValidationError(ClientMessage(
+          type=ClientMessageType.CHANNEL_MESSAGE,
+          data=f"Can't add {player_name}, improper formatting: command requires player name and player mmr seperated by spaces."
+          ))
+    else:
+      raise AuctionValidationError(ClientMessage(
+        type=ClientMessageType.CHANNEL_MESSAGE,
+        data=f"Can't add {player_name}, not an admin."
+        ))
+    
+  def captain(self, message):
+    if self.is_admin(message):
+      message_parts = message.content.split()
+      captain_name = message_parts[1]
+      if self.checkCaptain(captain_name):
+        raise AuctionValidationError(ClientMessage(
+          type=ClientMessageType.CHANNEL_MESSAGE,
+          data=f"Can't add {captain_name}, that captain is already in the system."
+          ))
+      if len(message_parts) > 2:
+        captain_dollars = message_parts[2]
+        if not self.checkNum(captain_dollars):
+          raise AuctionValidationError(ClientMessage(
+            type=ClientMessageType.CHANNEL_MESSAGE,
+            data=f"Can't add {captain_name}, improper MMR formatting."
+            ))
+        if not self.addCaptain(captain_name, captain_dollars):
+          raise AuctionValidationError(ClientMessage(
+            type=ClientMessageType.CHANNEL_MESSAGE,
+            data=f"Error adding {captain_name}."
+            ))
+      else:
+        raise AuctionValidationError(ClientMessage(
+          type=ClientMessageType.CHANNEL_MESSAGE,
+          data=f"Can't add {captain_name}, improper formatting: command requires captain name and captain dollars seperated by spaces."
+          ))
+    else:
+      raise AuctionValidationError(ClientMessage(
+        type=ClientMessageType.CHANNEL_MESSAGE,
+        data=f"Can't add {captain_name}, not an admin."
+        ))
+
+  
