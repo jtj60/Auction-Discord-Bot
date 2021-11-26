@@ -56,6 +56,10 @@ class AuctionBot(commands.Cog):
       181700384279101440,  # fspoon
     ]
     self.league = 'PST'                   #enter league name
+    self.emojis = [
+      '<:plus:913878220489773099>',       #plus for bot reaction
+      '<:minus:913877912355229727>'       #minus for bot reaction
+    ]
 
     self.client = client
     self.current_timer = None
@@ -225,11 +229,12 @@ class AuctionBot(commands.Cog):
   @commands.command()
   async def bid(self, ctx):
     try:
-      client_message = self.auction.bid(ctx.message)
-      # TODO: React with client message
+      self.auction.bid(ctx.message)
+      await ctx.message.add_reaction(self.emojis[0])
     except AuctionValidationError as e:
       if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
         await ctx.send(e.client_message.data)
+        await ctx.message.add_reaction(self.emojis[1])
       return None
   
   @commands.command()
@@ -252,30 +257,23 @@ class AuctionBot(commands.Cog):
 
   @commands.command()
   async def player(self, ctx):
-    if self.is_admin(ctx):
-      userInput = str(ctx.message.content)
-      trash, name, mmr = userInput.rsplit(' ', 2)
-      flag = self.addPlayer(name, mmr)
-      if flag == True:
-        await ctx.send('Player added.')
-      else:
-        await ctx.send('Player already added.')
-    else:
-      ctx.send('You are not authorized.')
+    try:
+      self.auction.player(ctx.message)
+      await ctx.message.add_reaction(self.emojis[0])
+    except AuctionValidationError as e:
+      if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
+        await ctx.send(e.client_message.data)
+        await ctx.message.add_reaction(self.emojis[1])
 
   @commands.command()
   async def captain(self, ctx):
-    if self.is_admin(ctx):
-      name = ctx.message.mentions[0].name
-      userInput = str(ctx.message.content)
-      trash, trash, dollars = userInput.rsplit(' ', 2)
-      flag = self.addCaptain(name, dollars)
-      if flag == True:
-        await ctx.send('Captain added.')
-      else:
-        await ctx.send('Captain already added.')
-    else:
-      ctx.send('You are not authorized.')
+    try:
+      self.auction.captain(ctx.message)
+      await ctx.message.add_reaction(self.emojis[0])
+    except AuctionValidationError as e:
+      if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
+        await ctx.send(e.client_message.data)
+        await ctx.message.add_reaction(self.emojis[1])
 
   @commands.command()
   async def upload_test_lists(self, ctx):

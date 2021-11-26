@@ -261,21 +261,21 @@ class Auction:
     self.machine.nom_from_bid()
 
   def checkNum(self, number):
-    if type(number) == int or type(number) == float:
+    if type(number) == float:
       return True
     return False
   
   def player(self, message):
+    message_parts = message.content.split()
+    player_name = message_parts[1]
     if self.is_admin(message):
-      message_parts = message.content.split()
-      player_name = message_parts[1]
       if self.checkPlayer(player_name):
         raise AuctionValidationError(ClientMessage(
           type=ClientMessageType.CHANNEL_MESSAGE,
           data=f"Can't add {player_name}, that player is already in the system."
           ))
       if len(message_parts) > 2:
-        player_mmr = message_parts[2]
+        player_mmr = float(message_parts[2])
         if not self.checkNum(player_mmr):
           raise AuctionValidationError(ClientMessage(
             type=ClientMessageType.CHANNEL_MESSAGE,
@@ -298,16 +298,16 @@ class Auction:
         ))
     
   def captain(self, message):
+    message_parts = message.content.split()
+    captain_name = message_parts[1]
     if self.is_admin(message):
-      message_parts = message.content.split()
-      captain_name = message_parts[1]
       if self.checkCaptain(captain_name):
         raise AuctionValidationError(ClientMessage(
           type=ClientMessageType.CHANNEL_MESSAGE,
           data=f"Can't add {captain_name}, that captain is already in the system."
           ))
       if len(message_parts) > 2:
-        captain_dollars = message_parts[2]
+        captain_dollars = float(message_parts[2])
         if not self.checkNum(captain_dollars):
           raise AuctionValidationError(ClientMessage(
             type=ClientMessageType.CHANNEL_MESSAGE,

@@ -52,3 +52,21 @@ def test_admin_nominate_from_nonadmin_raises(started_auction):
             )
         )
         print(e)
+
+def test_add_player_from_command(started_auction):
+    with pytest.raises(AuctionValidationError) as e:
+        started_auction.player(
+            message=mock.Mock(
+                content="$player test 35",
+                author=mock.Mock(id=0), 
+            )
+        )
+
+def test_add_captain_from_command(started_auction):
+    with pytest.raises(AuctionValidationError) as e:
+        started_auction.captain(
+            message=mock.Mock(
+                content="$captain test 1000",
+                author=mock.Mock(id=0), 
+            )
+        )
