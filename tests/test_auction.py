@@ -56,8 +56,6 @@ def test_admin_nominate_from_nonadmin_raises(started_auction):
                 author=mock.Mock(id=0),
             )
         )
-        print(e)
-
 
 def test_add_player_from_command(started_auction):
     started_auction.player(
@@ -67,11 +65,27 @@ def test_add_player_from_command(started_auction):
         )
     )
 
-
 def test_add_captain_from_command(started_auction):
     started_auction.captain(
         message=mock.Mock(
             content="$captain test 1000",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
+    )
+
+def test_give_lot_to_winner_happycase(started_auction):
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate toth Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    starting_dollars = started_auction.captains
+    started_auction.bid(
+        message=mock.Mock(
+            content="$bid 100 Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+
     )
