@@ -73,58 +73,6 @@ class AuctionBot(commands.Cog):
         self.debug = debug
         self.auction = Auction()
 
-        self.playerCount = 0
-
-        self.captains = []
-        self.teams = []
-        self.players = []
-        self.bids = []
-
-    def populate_from_db(self):
-        if "captains" in db.keys():
-            self.captains = db["captains"]
-        if "teams" in db.keys():
-            self.teams = db["teams"]
-        if "players" in db.keys():
-            self.players = db["players"]
-        if "bids" in db.keys():
-            self.bids = db["bids"]
-
-    def delete_db(self):
-        self.captains = db["captains"]
-        self.players = db["players"]
-        self.bids = db["bids"]
-        self.teams = db["teams"]
-        if not self.captains:
-            del db["captains"]
-        if not self.players:
-            del db["players"]
-        if not self.bids:
-            del db["bids"]
-        if not self.teams:
-            del db["teams"]
-
-    def addCaptain(self, name, dollars):
-        if self.checkCaptain(name):
-            return False
-        captain = {"name": name, "dollars": dollars}
-        self.captains.append(captain)
-        db["captains"] = self.captains
-        return True
-
-    def removeCaptain(self, name):
-        if self.checkCaptain(name):
-            self.captains.remove(name)
-            db["captains"] = self.captains
-            return True
-        return False
-
-    def checkCaptain(self, name):
-        for captain in self.captains:
-            if captain["name"] == name:
-                return True
-        return False
-
     def rotateCaptainList(self):
         self.captains = db["captains"]
         cap = self.captains[0]
@@ -135,31 +83,6 @@ class AuctionBot(commands.Cog):
     def clearCaptains(self):
         self.captains.clear()
         db["captains"] = self.captains
-
-    def addPlayer(self, name, mmr):
-        if self.checkPlayer(name):
-            return False
-        player = {"name": name, "mmr": mmr}
-        self.players.append(player)
-        db["players"] = self.players
-        return True
-
-    def removePlayer(self, name):
-        if self.checkPlayer(name):
-            self.players.remove()
-            db["players"] = self.players
-            return True
-        return False
-
-    def checkPlayer(self, name):
-        for player in self.players:
-            if player["name"] == name:
-                return True
-        return False
-
-    def clearPlayers(self):
-        self.players.clear()
-        db["players"] = self.players
 
     def is_admin(self, ctx):
         if ctx.message.author.id in ADMIN_IDS or self.debug:
@@ -292,15 +215,6 @@ class AuctionBot(commands.Cog):
             return
         self.auction.bootstrap_from_testlists()
         await ctx.send("Test lists uploaded")
-
-    @commands.command()
-    async def reset_captains_list_order(self, ctx):
-        if not self.is_admin(ctx):
-            return
-        captains = db["captains"]
-        sorted_captains = sorted(captains, key=lambda x: x["dollars"], reverse=True)
-        self.captains = sorted_captains
-        db["captains"] = sorted_captains
 
     @commands.command()
     async def DELETE(self, ctx):
