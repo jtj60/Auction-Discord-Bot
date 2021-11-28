@@ -1,0 +1,6 @@
+discord
+ipython
+pytest
+python-dotenv
+replit
+transitions
