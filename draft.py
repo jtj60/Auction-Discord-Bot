@@ -409,6 +409,3 @@ class Auction:
                     data=f"Can't add {captain_name}, improper formatting: command requires captain name and captain dollars seperated by spaces.",
                 )
             )
-
-    def delete(self, message):
-        message_parts
