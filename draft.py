@@ -5,7 +5,7 @@ from transitions import Machine
 from collections import namedtuple
 from lot import Lot
 import playerlist_util
-
+#sdf
 
 class ClientMessageType:
     CHANNEL_MESSAGE = 0
