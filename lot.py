@@ -12,6 +12,7 @@ async def timer(t):
 
 
 LOT_TIMING_STRUCTURE = [35, 30, 20, 15, 15, 15, 15, 10, 10]
+TWO_CAPTAINS_MODE_TIMER = 6
 
 
 class Lot:
@@ -59,6 +60,17 @@ class Lot:
         self.time_remaining = LOT_TIMING_STRUCTURE[
             min(time_remaining_idx, len(LOT_TIMING_STRUCTURE) - 1)
         ]
+        if self._detect_two_captains_mode():
+            self.time_remaining = TWO_CAPTAINS_MODE_TIMER
+
+    def _detect_two_captains_mode(self):
+        recent_bids = self.current_bids[-6:]
+        if len(recent_bids) < 6:
+            return False
+        captains = [bid["captain_name"] for bid in recent_bids]
+        if len(set(captains)) <= 2:
+            return True
+        return False
 
     @property
     def current_max_bid_amount(self):

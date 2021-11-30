@@ -7,6 +7,7 @@ from draft import InsufficientFundsError
 from draft import TooLowBidError
 from auction import Auction
 from auction import ADMIN_IDS
+from lot import TWO_CAPTAINS_MODE_TIMER
 
 
 @pytest.fixture
@@ -223,3 +224,55 @@ def test_bid_insufficient_funds(started_auction):
                 author=mock.Mock(id=ADMIN_IDS[0]),
             )
         )
+
+
+def test_detect_two_captains_mode(started_auction):
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate toth Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    bids_to_make = [
+        "$bid 100 Cev",
+        "$bid 101 yfu",
+        "$bid 103 Cev",
+        "$bid 104 yfu",
+        "$bid 105 Cev",
+        "$bid 106 yfu",
+        "$bid 107 Cev",
+        "$bid 108 yfu",
+        "$bid 109 Cev",
+        "$bid 110 yfu",
+        "$bid 111 Cev",
+        "$bid 112 yfu",
+        "$bid 113 Cev",
+        "$bid 114 yfu",
+        "$bid 115 Cev",
+        "$bid 116 yfu",
+    ]
+
+    prev_time_remaining = started_auction.current_lot.time_remaining
+    for time_remaining in started_auction.run_current_lot():
+        if bids_to_make and len(bids_to_make) < 6:
+            assert time_remaining == TWO_CAPTAINS_MODE_TIMER - 1  # minus 1 because we've already run one second before it gets yielded
+        elif not bids_to_make:
+            assert time_remaining < TWO_CAPTAINS_MODE_TIMER
+
+        # Uneventful bid process :P
+        if time_remaining > 0 and bids_to_make:
+            bid = bids_to_make.pop(0)
+            success = started_auction.bid(
+                message=mock.Mock(
+                    content=bid,
+                    author=mock.Mock(id=ADMIN_IDS[0]),
+                )
+            )
+            assert success
+
+
+            if len(bids_to_make) < 6:
+                # inserting the bid will change the timer
+                assert started_auction.current_lot.time_remaining == TWO_CAPTAINS_MODE_TIMER
+        prev_time_remaining = time_remaining
