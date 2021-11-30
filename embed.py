@@ -75,3 +75,37 @@ def player_info(message):
             embed.add_field(name="(1-5) ", value=ratings_string, inline=True)
             embed.add_field(name="Statement: ", value=player["statement"], inline=False)
             return embed
+        
+def winning_bid(lot): 
+    embed = discord.Embed(
+        title="We have a winner!", 
+        color=0x1ABC9C,
+        description="The winning bid is:",
+    )
+    embed.add_field(name="Winner: ", value=lot.winning_bid["captain_name"])
+    embed.add_field(name="Amount: ", value=lot.winning_bid["bid_amount"])
+    embed.add_field(name="Player: ", value=lot.player)
+    return embed 
+
+def display_transition_to_nomination(lot): 
+    embed_end_bidding = discord.Embed(
+       title="Bidding has ended!", 
+       color=0x1ABC9C,
+    )
+    embed_end_nomination = discord.Embed(
+        title="Nomination phase ",
+        color=0x1ABC9C,
+        description="It is " + lot.nominator + "'s turn to nominate a player.", 
+    )
+    return embed_end_bidding, embed_end_nomination
+
+def display_successful_nomination(lot, player):
+    embed = discord.Embed(
+        title="Nomination: ", 
+        color=0x1ABC9C,
+        description="Nomination successful!",
+    )
+    embed.add_field(name="Player: ", value=player.name)
+    embed.add_field(name="MMR: ", value=player.mmr)
+    embed.add_field(name="Statement: ", value=player.statement)
+    embed.add_field(name="Nominated by: ", value=lot.nominator)

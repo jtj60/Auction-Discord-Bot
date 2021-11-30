@@ -4,6 +4,7 @@
     * In `draft.py` move winning bid into teams, subtract dollars from captain.
     * Teams display
     * Restart current lot
+    * 'Two-captains mode'
 
 - Fix display issues
     * Transitioning from bidding <---> nomination

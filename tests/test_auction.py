@@ -35,6 +35,7 @@ def test_admin_nominate(started_auction):
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
+    print(started_auction.current_lot.player)
 
     assert started_auction.machine.state == "bidding"
 
