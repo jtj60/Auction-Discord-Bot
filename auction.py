@@ -147,8 +147,6 @@ class AuctionBot(commands.Cog):
                     await ctx.send(
                         f"{time_remaining} seconds left for player {self.auction.current_lot.player}"
                     )
-            winning_bid = self.auction.current_lot.winning_bid
-            await ctx.send(str(winning_bid))
             self.auction.give_lot_to_winner()
 
         except asyncio.CancelledError:

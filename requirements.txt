@@ -4,3 +4,4 @@ pytest
 python-dotenv
 replit
 transitions
+python-slugify

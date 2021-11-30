@@ -11,7 +11,7 @@ async def timer(t):
             yield
 
 
-LOT_TIMING_STRUCTURE = [60, 45, 30, 30, 15, 15, 15]
+LOT_TIMING_STRUCTURE = [35, 30, 20, 15, 15, 15, 15, 10, 10]
 
 
 class Lot:
@@ -54,7 +54,6 @@ class Lot:
             )
 
     def add_bid(self, bid):
-        # TODO: Enforce minimum bid difference
         self.current_bids.append(bid)
         time_remaining_idx = len(self.current_bids) - 1
         self.time_remaining = LOT_TIMING_STRUCTURE[

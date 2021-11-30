@@ -1,11 +1,12 @@
 from replit import db as replit_db
 
 from transitions import Machine
+import uuid
+import slugify
 
 from collections import namedtuple
 from lot import Lot
 import playerlist_util
-#sdf
 
 class ClientMessageType:
     CHANNEL_MESSAGE = 0
@@ -14,6 +15,10 @@ class ClientMessageType:
 
 
 ClientMessage = namedtuple("ClientMessage", ["type", "data"])
+Nomination = namedtuple(
+    "Nomination", 
+    ["lot_id", "player_name", "player_mmr", "nominator", "captain", "amount_paid"]
+)
 
 ADMIN_IDS = [
     411342580887060480,  # toth
@@ -51,24 +56,27 @@ class Auction:
         self.machine.add_transition("end_from_bid", "bidding", "ending")
 
         self.captains = []
-        self.teams = []
         self.players = []
         self.bids = []
+        self.nominations = []
 
         self.current_lot = None
 
     def populate_from_db(self):
         if "captains" in self.db.keys():
             self.captains = self.db["captains"]
-        if "teams" in self.db.keys():
-            self.teams = self.db["teams"]
         if "players" in self.db.keys():
             self.players = self.db["players"]
         if "bids" in self.db.keys():
             self.bids = self.db["bids"]
+        if "nominations" in self.db.keys():
+            self.bids = self.db["nominations"]
+
+    def persist_key(self, key):
+        self.db[key] = getattr(self, key)
 
     def delete_db(self):
-        for key in ["captains", "players", "bids", "teams"]:
+        for key in ["captains", "players", "bids", "captain_order", "nominations"]:
             try:
                 setattr(self, key, [])
                 del self.db[key]
@@ -76,25 +84,28 @@ class Auction:
                 pass
 
     def addCaptain(self, name, dollars):
-        if self.checkCaptain(name):
+        if self.search_captain(name):
             return False
-        captain = {"name": name, "dollars": dollars}
+        captain = {"name": name, "dollars": dollars, "slug": slugify.slugify(name)}
         self.captains.append(captain)
         self.db["captains"] = self.captains
         return True
 
-    def checkCaptain(self, name):
+    def search_captain(self, name):
         for captain in self.captains:
             if captain["name"] == name:
-                return True
-        return False
+                return captain
+            if slugify.slugify(captain["name"]) == slugify.slugify(name):
+                return captain
+        return None
 
-    def rotateCaptainList(self):
-        self.captains = self.db["captains"]
-        cap = self.captains[0]
-        self.captains.append(cap)
-        self.captains.pop(0)
-        self.db["captains"] = self.captains
+    def search_player(self, name):
+        for player in self.players:
+            if player["name"] == name:
+                return player
+            if slugify.slugify(player["name"]) == slugify.slugify(name):
+                return player
+        return None
 
     def clearCaptains(self):
         self.captains = []
@@ -159,7 +170,7 @@ class Auction:
         return False
 
     def get_next_captain(self):
-        return self.db["captains"][0]
+        return self.db["captain_nominate_order"][0]
 
     def bootstrap_from_testlists(self):
         playerlist = playerlist_util.parse_playerlist_csv("test_playerlist.csv")
@@ -184,10 +195,15 @@ class Auction:
                 player["hero_drafter"],
             )
 
+    def populate_captain_nominate_order(self):
+        captains = sorted(self.db["captains"], key=lambda x: x["dollars"], reverse=True)
+        self.db['captain_nominate_order'] = captains * 4
+
     def start(self, message):
         if self.is_admin(message):
             self.populate_from_db()
             self.machine.start_machine()
+            self.populate_captain_nominate_order()
         else:
             raise AuctionValidationError(
                 ClientMessage(
@@ -207,30 +223,18 @@ class Auction:
         return self.current_lot
 
     def _validate_captain(self, message):
-        message_parts = message.content.split()
-        captain_name = message.author.name
-        if len(message_parts) > 2:
-            captain_name = message_parts[2]
-            if not self.is_admin(message):
-                print(f"Couldn't admin override {captain_name}, not admin")
-                return None
-            if not self.checkCaptain(captain_name):
-                print(f"Couldn't admin override {captain_name}, not a captain")
-                return None
-        return [
-            captain
-            for captain in self.db["captains"]
-            if captain["name"] == captain_name
-        ][0]
+        message_body = self.parse_message_for_names(message)
+        author_name = message.author.name
+        captain = self.search_captain(message_body['captain'])
+        if captain is None:
+            return None
 
-    def _validate_bid_amount(self, message, captain):
-        message_parts = message.content.split()
-        if len(message_parts) < 2:
-            return None
-        try:
-            bid_amount = int(message_parts[1])
-        except ValueError:
-            return None
+        if author_name != captain['name']:
+            if not self.is_admin(message):
+                return None
+        return captain
+
+    def _validate_bid_amount(self, bid_amount, captain):
         if bid_amount < 0:
             return None
 
@@ -247,8 +251,10 @@ class Auction:
         if self.machine.state != "bidding":
             print(f"Received bid in state {self.machine.state}, ignoring")
             return
+
+        message_body = self.parse_message_for_names(message)
         captain = self._validate_captain(message)
-        bid_amount = self._validate_bid_amount(message, captain)
+        bid_amount = self._validate_bid_amount(message_body['amount'], captain)
         if bid_amount is None:
             raise AuctionValidationError(
                 ClientMessage(
@@ -263,11 +269,10 @@ class Auction:
         return ClientMessage(ClientMessageType.REACT, "+")
 
     def nominate(self, message):
-        message_parts = message.content.split()
-        nominated_player_name = message_parts[1]
+        message_body = self.parse_message_for_names(message)
         # TODO: Make sure this author was allowed to nominate
         nominated_on_behalf_of_captain = message.author.name
-        if not self.checkPlayer(nominated_player_name):
+        if not message_body['player']:
             raise AuctionValidationError(
                 ClientMessage(
                     type=ClientMessageType.CHANNEL_MESSAGE,
@@ -275,20 +280,20 @@ class Auction:
                 )
             )
 
-        if len(message_parts) > 2:
-            nominated_on_behalf_of_captain = message_parts[2]
+        if message_body.get('captain') is not None:
+            nominated_on_behalf_of_captain = message_body['captain']
             if not self.is_admin(message):
                 raise AuctionValidationError(
                     ClientMessage(
                         type=ClientMessageType.CHANNEL_MESSAGE,
-                        data=f"Can't nominate {nominated_player_name} on behalf of {nominated_on_behalf_of_captain}, not admin",
+                        data=f"Can't nominate {message_body['player']} on behalf of {nominated_on_behalf_of_captain}, not admin",
                     )
                 )
-            if not self.checkCaptain(nominated_on_behalf_of_captain):
+            if not self.search_captain(nominated_on_behalf_of_captain):
                 raise AuctionValidationError(
                     ClientMessage(
                         type=ClientMessageType.CHANNEL_MESSAGE,
-                        data=f"Can't nominate {nominated_player_name} on behalf of {nominated_on_behalf_of_captain}, not a captain",
+                        data=f"Can't nominate {message_body['player']} on behalf of {nominated_on_behalf_of_captain}, not a captain",
                     )
                 )
         else:
@@ -305,27 +310,109 @@ class Auction:
         if self.machine.state == "starting":
             self.machine.nom_from_start()
 
-        self.current_lot = Lot(nominated_player_name, nominated_on_behalf_of_captain)
+        self.current_lot = Lot(message_body['player'], nominated_on_behalf_of_captain)
+        self.machine.bid_from_nom()
         return self.current_lot
 
     def clear_lot(self):
         self.current_lot = None
 
+    def get_current_teams(self):
+        teams_by_captain_name = {}
+        for nomination in self.nominations:
+            teams_by_captain_name.setdefault(
+                nomination.captain, 
+                []
+            ).append(nomination)
+        return teams_by_captain_name
+
     def give_lot_to_winner(self):
-        pass
+        winning_bid = self.current_lot.winning_bid
+        player = self.search_player(winning_bid['player'])
+        captain = self.search_captain(winning_bid['captain'])
+        nomination = Nomination(
+            lot_id=str(uuid.uuid4()),
+            player_mmr=player['mmr'],
+            player_name=player['name'],
+            captain=captain['name'],
+            nominator=self.current_lot.nominator,
+            amount_paid=winning_bid['amount'],
+        )
+
+        # Housekeeping
+        self.pop_captain_from_nominate_order()
+        captain['dollars'] -= winning_bid['amount']
+        self.db['captians'] = self.captains
+        self.nominations.append(nomination)
+        self.persist_key("nominations")
+        self.players.remove(player)
+        self.persist_key("players")
+        
+        return nomination
+
+    def pop_captain_from_nominate_order(self):
+        nominate_order = self.db["captain_nominate_order"]
+        nominate_order.pop(0)
+        self.db["captain_nominate_order"] = nominate_order
 
     def run_current_lot(self):
-        self.machine.bid_from_nom()
         for time_remaining in self.current_lot.run_lot():
             yield time_remaining
 
-        self.rotateCaptainList()
         self.machine.nom_from_bid()
 
     def checkNum(self, number):
         if type(number) == float:
             return True
         return False
+
+    def parse_message_for_names(self, message):
+        message_body = {
+            'command': None,
+            'amount': None,
+            'player': None,
+            'captain': None,
+        }
+        message_parts = message.content.split()
+        if message_parts[0] == '$bid':
+            message_body['command'] = '$bid'
+            try:
+                amount = int(message_parts[1])
+                message_body["amount"] = amount
+            except ValueError:
+                return message_body
+
+            if len(message_parts) > 2:
+                name_parts = message_parts[2:]
+                possible_name = " ".join(name_parts)
+                captain = self.search_captain(possible_name)
+                if captain:
+                    message_body["captain"] = captain["name"]
+            
+            return message_body
+        
+        if message_parts[0] == '$nominate':
+            message_body['command'] = '$nominate'
+
+            name_parts = message_parts[1:]
+            for i in range(len(name_parts)):
+                player_name, captain_name = name_parts[:i], name_parts[i:]
+                player_name = " ".join(player_name)
+                captain_name = " ".join(captain_name)
+
+                player = self.search_player(player_name)
+                captain = self.search_captain(captain_name)
+                if not player:
+                    if captain:
+                        message_body["captain"] == captain["name"]
+                    continue
+                message_body["player"] = player["name"]
+                if captain:
+                    message_body["captain"] = captain["name"]
+
+                return message_body
+            return message_body
+            
 
     def player(self, message):
         message_parts = message.content.split()
@@ -368,6 +455,7 @@ class Auction:
                 )
             )
 
+
     def captain(self, message):
         message_parts = message.content.split()
         captain_name = message_parts[1]
@@ -379,7 +467,7 @@ class Auction:
                 )
             )
             return
-        if self.checkCaptain(captain_name):
+        if self.search_captain(captain_name):
             raise AuctionValidationError(
                 ClientMessage(
                     type=ClientMessageType.CHANNEL_MESSAGE,
