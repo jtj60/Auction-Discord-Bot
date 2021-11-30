@@ -73,13 +73,11 @@ class Lot:
         return False
 
     @property
-    def current_max_bid_amount(self):
+    def current_max_bid(self):
         if not self.current_bids:
-            return 0
+            return None
         else:
-            return sorted(self.current_bids, key=lambda x: x["amount"])[-1][
-                "amount"
-            ]
+            return sorted(self.current_bids, key=lambda x: x["amount"])[-1]
 
     def run_lot(self, initial_timer=60):
         self.time_remaining = initial_timer

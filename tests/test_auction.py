@@ -5,6 +5,7 @@ from draft import AuctionValidationError
 from draft import ClientMessageType
 from draft import InsufficientFundsError
 from draft import TooLowBidError
+from draft import BidAgainstSelfError
 from auction import Auction
 from auction import ADMIN_IDS
 from lot import TWO_CAPTAINS_MODE_TIMER
@@ -226,6 +227,23 @@ def test_bid_insufficient_funds(started_auction):
         )
 
 
+def test_cant_bid_against_yourself(started_auction):
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate toth Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    _run_bids(started_auction, ["$bid 100 Cev"])
+    with pytest.raises(BidAgainstSelfError) as e:
+        started_auction.bid(
+            message=mock.Mock(
+                content="$bid 105 Cev",
+                author=mock.Mock(id=ADMIN_IDS[0]),
+            )
+        )
+
 def test_detect_two_captains_mode(started_auction):
     started_auction.nominate(
         message=mock.Mock(
@@ -253,7 +271,6 @@ def test_detect_two_captains_mode(started_auction):
         "$bid 116 yfu",
     ]
 
-    prev_time_remaining = started_auction.current_lot.time_remaining
     for time_remaining in started_auction.run_current_lot():
         if bids_to_make and len(bids_to_make) < 6:
             assert time_remaining == TWO_CAPTAINS_MODE_TIMER - 1  # minus 1 because we've already run one second before it gets yielded
@@ -275,4 +292,3 @@ def test_detect_two_captains_mode(started_auction):
             if len(bids_to_make) < 6:
                 # inserting the bid will change the timer
                 assert started_auction.current_lot.time_remaining == TWO_CAPTAINS_MODE_TIMER
-        prev_time_remaining = time_remaining

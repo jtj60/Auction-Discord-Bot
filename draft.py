@@ -37,6 +37,9 @@ class InsufficientFundsError(AuctionValidationError):
 class TooLowBidError(AuctionValidationError):
     pass
 
+class BidAgainstSelfError(AuctionValidationError):
+    pass
+
 
 class Auction:
     def __init__(self, db=None):
@@ -252,11 +255,23 @@ class Auction:
                 )
             )
 
-        if bid_amount <= self.current_lot.current_max_bid_amount:
+        current_max_bid = self.current_lot.current_max_bid
+
+        if current_max_bid is None:
+            return bid_amount
+
+        if bid_amount <= current_max_bid['amount']:
             raise TooLowBidError(
                 client_message=ClientMessage(
                     ClientMessageType.REACT,
                     f"{bid_amount} is less than the current max bid.",
+                )
+            )
+        if captain['name'] == current_max_bid['captain_name']:
+            raise BidAgainstSelfError(
+                client_message=ClientMessage(
+                    ClientMessageType.REACT,
+                    f"You're already the highest bid",
                 )
             )
         return bid_amount

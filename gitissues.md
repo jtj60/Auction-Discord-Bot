@@ -1,21 +1,15 @@
 # Remaining Tasks
 
 - Add Teams functionality
-    * In `draft.py` move winning bid into teams, subtract dollars from captain.
     * Teams display
     * Restart current lot
-    * 'Two-captains mode'
 
 - Fix display issues
     * Transitioning from bidding <---> nomination
     * When nomination is successful
     * Winning bid
 
-- Optional bid value upon nomination
-
 - Channel whitelist 
-
-- Fuzzy casing
 
 - More admin commands
     * Pause
@@ -27,6 +21,8 @@
 - DM functionality
     * Check current your current team
     * Check remaining dollars
+
+- Optional bid value upon nomination
 
 - Mock draft
 
