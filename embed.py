@@ -109,3 +109,4 @@ def display_successful_nomination(lot, player):
     embed.add_field(name="MMR: ", value=player.mmr)
     embed.add_field(name="Statement: ", value=player.statement)
     embed.add_field(name="Nominated by: ", value=lot.nominator)
+    return embed
