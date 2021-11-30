@@ -63,6 +63,32 @@ def test_admin_nominate_messy_player_messy_captain(started_auction):
     assert started_auction.current_lot.nominator == "Vuvuzela Virtuoso Hans Rudolph"
     assert started_auction.machine.state == "bidding"
 
+def test_nominate_whitespace_name(started_auction):
+    player, = [player for player in started_auction.players if player['name'] == "ZombiesExpert "]
+    assert player
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate ZombiesExpert Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    assert started_auction.current_lot.player == "ZombiesExpert "
+    assert started_auction.machine.state == "bidding"
+
+def test_nominate_lowercase_name(started_auction):
+    player, = [player for player in started_auction.players if player['name'] == "Scrub"]
+    assert player
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate scrub Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    assert started_auction.current_lot.player == "Scrub"
+    assert started_auction.machine.state == "bidding"
+
 
 def test_nominate_typo_raises_auction_error(started_auction):
     with pytest.raises(AuctionValidationError):
