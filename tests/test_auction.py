@@ -1,8 +1,10 @@
 import pytest
 from unittest import mock
-import slugify
 
 from draft import AuctionValidationError
+from draft import ClientMessageType
+from draft import InsufficientFundsError
+from draft import TooLowBidError
 from auction import Auction
 from auction import ADMIN_IDS
 
@@ -35,7 +37,6 @@ def test_admin_nominate(started_auction):
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
-    print(started_auction.current_lot.player)
 
     assert started_auction.machine.state == "bidding"
 
@@ -90,6 +91,7 @@ def test_add_player_from_command(started_auction):
     player = started_auction.search_player("test")
     assert player['name'] == 'test'
     assert player['mmr'] == 35
+
 
 def test_add_captain_from_command(started_auction):
     started_auction.captain(
@@ -187,3 +189,37 @@ def test_give_lot_to_winner_multiple_bids(started_auction):
 
     captain = started_auction.search_captain("yfu")
     assert captain['dollars'] + completed_lot.amount_paid == starting_dollars
+
+def test_bid_below_minimum_raises(started_auction):
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate toth Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+    _run_bids(started_auction, ["$bid 100 Cev"])
+
+    with pytest.raises(TooLowBidError) as e:
+        started_auction.bid(
+            message=mock.Mock(
+                content="$bid 100 yfu",
+                author=mock.Mock(id=ADMIN_IDS[0]),
+            )
+        )
+
+def test_bid_insufficient_funds(started_auction):
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate toth Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+    starting_dollar = int(started_auction.search_captain("yfu")['dollars'])
+
+    with pytest.raises(InsufficientFundsError) as e:
+        started_auction.bid(
+            message=mock.Mock(
+                content=f"$bid {starting_dollar + 1} yfu",
+                author=mock.Mock(id=ADMIN_IDS[0]),
+            )
+        )

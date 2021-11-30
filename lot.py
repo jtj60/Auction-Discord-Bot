@@ -60,6 +60,15 @@ class Lot:
             min(time_remaining_idx, len(LOT_TIMING_STRUCTURE) - 1)
         ]
 
+    @property
+    def current_max_bid_amount(self):
+        if not self.current_bids:
+            return 0
+        else:
+            return sorted(self.current_bids, key=lambda x: x["amount"])[-1][
+                "amount"
+            ]
+
     def run_lot(self, initial_timer=60):
         self.time_remaining = initial_timer
         while self.time_remaining > 0:

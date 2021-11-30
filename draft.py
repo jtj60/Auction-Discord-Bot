@@ -31,6 +31,12 @@ class AuctionValidationError(Exception):
         super().__init__()
         self.client_message = client_message
 
+class InsufficientFundsError(AuctionValidationError):
+    pass
+
+class TooLowBidError(AuctionValidationError):
+    pass
+
 
 class Auction:
     def __init__(self, db=None):
@@ -239,10 +245,18 @@ class Auction:
             return None
 
         if bid_amount > captain["dollars"]:
-            raise AuctionValidationError(
-                ClientMessage(
-                    ClientMessageType.CHANNEL_MESSAGE,
+            raise InsufficientFundsError(
+                client_message=ClientMessage(
+                    ClientMessageType.REACT,
                     f"{captain['name']} doesn't have enough money to bid {bid_amount}.",
+                )
+            )
+
+        if bid_amount <= self.current_lot.current_max_bid_amount:
+            raise TooLowBidError(
+                client_message=ClientMessage(
+                    ClientMessageType.REACT,
+                    f"{bid_amount} is less than the current max bid.",
                 )
             )
         return bid_amount
