@@ -24,6 +24,7 @@ def started_auction():
     )
     return auction
 
+
 @pytest.fixture
 def running_auction(started_auction):
     started_auction.nominate(
@@ -38,10 +39,9 @@ def running_auction(started_auction):
             content="$bid 100 Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
-
     )
     assert bid_successful
-    
+
     for _ in started_auction.run_current_lot():
         # Uneventful bid process :P
         pass
@@ -59,16 +59,14 @@ def running_auction(started_auction):
             content="$bid 100 yfu",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
-
     )
     assert bid_successful
-    
+
     for _ in started_auction.run_current_lot():
         # Uneventful bid process :P
         pass
     started_auction.give_lot_to_winner()
     return started_auction
-    
 
 
 def test_auction_start(started_auction):
@@ -88,6 +86,7 @@ def test_admin_nominate(started_auction):
 
     assert started_auction.machine.state == "bidding"
 
+
 def test_admin_nominate_messy_name(started_auction):
     started_auction.nominate(
         message=mock.Mock(
@@ -97,6 +96,7 @@ def test_admin_nominate_messy_name(started_auction):
     )
     assert started_auction.current_lot.player == "Linkdx {noflamevow}"
     assert started_auction.machine.state == "bidding"
+
 
 def test_admin_nominate_messy_player_messy_captain(started_auction):
     started_auction.nominate(
@@ -109,8 +109,13 @@ def test_admin_nominate_messy_player_messy_captain(started_auction):
     assert started_auction.current_lot.nominator == "Vuvuzela Virtuoso Hans Rudolph"
     assert started_auction.machine.state == "bidding"
 
+
 def test_nominate_whitespace_name(started_auction):
-    player, = [player for player in started_auction.players if player['name'] == "ZombiesExpert "]
+    (player,) = [
+        player
+        for player in started_auction.players
+        if player["name"] == "ZombiesExpert "
+    ]
     assert player
     started_auction.nominate(
         message=mock.Mock(
@@ -122,8 +127,11 @@ def test_nominate_whitespace_name(started_auction):
     assert started_auction.current_lot.player == "ZombiesExpert "
     assert started_auction.machine.state == "bidding"
 
+
 def test_nominate_lowercase_name(started_auction):
-    player, = [player for player in started_auction.players if player['name'] == "Scrub"]
+    (player,) = [
+        player for player in started_auction.players if player["name"] == "Scrub"
+    ]
     assert player
     started_auction.nominate(
         message=mock.Mock(
@@ -155,6 +163,7 @@ def test_admin_nominate_from_nonadmin_raises(started_auction):
             )
         )
 
+
 def test_add_player_from_command(started_auction):
     started_auction.player(
         message=mock.Mock(
@@ -163,8 +172,8 @@ def test_add_player_from_command(started_auction):
         )
     )
     player = started_auction.search_player("test")
-    assert player['name'] == 'test'
-    assert player['mmr'] == 35
+    assert player["name"] == "test"
+    assert player["mmr"] == 35
 
 
 def test_add_captain_from_command(started_auction):
@@ -174,6 +183,7 @@ def test_add_captain_from_command(started_auction):
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
+
 
 def test_bid_messy_name(started_auction):
     started_auction.nominate(
@@ -188,10 +198,10 @@ def test_bid_messy_name(started_auction):
             content=f"$bid 100 {vuvu_name}",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
-
     )
     assert bid_successful
-    assert started_auction.current_lot.current_bids[0]['captain_name'] == vuvu_name
+    assert started_auction.current_lot.current_bids[0]["captain_name"] == vuvu_name
+
 
 def test_give_lot_to_winner_happycase(started_auction):
     started_auction.nominate(
@@ -201,34 +211,34 @@ def test_give_lot_to_winner_happycase(started_auction):
         )
     )
 
-    starting_dollars = started_auction.search_captain("Cev")['dollars']
+    starting_dollars = started_auction.search_captain("Cev")["dollars"]
     bid_successful = started_auction.bid(
         message=mock.Mock(
             content="$bid 100 Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
-
     )
     assert bid_successful
-    
+
     for _ in started_auction.run_current_lot():
         # Uneventful bid process :P
         pass
 
     winning_bid = started_auction.current_lot.winning_bid
-    assert winning_bid['amount'] == 100
-    assert winning_bid['captain'] == "Cev"
-    assert winning_bid['player'] == "toth"
+    assert winning_bid["amount"] == 100
+    assert winning_bid["captain"] == "Cev"
+    assert winning_bid["player"] == "toth"
 
     completed_lot = started_auction.give_lot_to_winner()
 
     captain = started_auction.search_captain("Cev")
-    assert captain['dollars'] + completed_lot.amount_paid == starting_dollars
+    assert captain["dollars"] + completed_lot.amount_paid == starting_dollars
     assert started_auction.nominations[-1].lot_id == completed_lot.lot_id
     player = started_auction.search_player("toth")
     assert player["is_picked"]
 
     assert started_auction.machine.state == "nominating"
+
 
 def _run_bids(auction, bids):
     for bid in bids:
@@ -240,6 +250,7 @@ def _run_bids(auction, bids):
         )
         assert success
 
+
 def test_give_lot_to_winner_multiple_bids(started_auction):
     started_auction.nominate(
         message=mock.Mock(
@@ -248,22 +259,26 @@ def test_give_lot_to_winner_multiple_bids(started_auction):
         )
     )
 
-    starting_dollars = started_auction.search_captain("yfu")['dollars']
-    _run_bids(started_auction, ["$bid 100 Cev", "$bid 150 yfu", "$bid 200 Cev", "$bid 300 yfu"])
+    starting_dollars = started_auction.search_captain("yfu")["dollars"]
+    _run_bids(
+        started_auction,
+        ["$bid 100 Cev", "$bid 150 yfu", "$bid 200 Cev", "$bid 300 yfu"],
+    )
 
     for _ in started_auction.run_current_lot():
         # Uneventful bid process :P
         pass
 
     winning_bid = started_auction.current_lot.winning_bid
-    assert winning_bid['amount'] == 300
-    assert winning_bid['captain'] == "yfu"
-    assert winning_bid['player'] == "toth"
+    assert winning_bid["amount"] == 300
+    assert winning_bid["captain"] == "yfu"
+    assert winning_bid["player"] == "toth"
 
     completed_lot = started_auction.give_lot_to_winner()
 
     captain = started_auction.search_captain("yfu")
-    assert captain['dollars'] + completed_lot.amount_paid == starting_dollars
+    assert captain["dollars"] + completed_lot.amount_paid == starting_dollars
+
 
 def test_bid_below_minimum_raises(started_auction):
     started_auction.nominate(
@@ -282,6 +297,7 @@ def test_bid_below_minimum_raises(started_auction):
             )
         )
 
+
 def test_bid_insufficient_funds(started_auction):
     started_auction.nominate(
         message=mock.Mock(
@@ -289,7 +305,7 @@ def test_bid_insufficient_funds(started_auction):
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
-    starting_dollar = int(started_auction.search_captain("yfu")['dollars'])
+    starting_dollar = int(started_auction.search_captain("yfu")["dollars"])
 
     with pytest.raises(InsufficientFundsError) as e:
         started_auction.bid(
@@ -316,6 +332,7 @@ def test_cant_bid_against_yourself(started_auction):
                 author=mock.Mock(id=ADMIN_IDS[0]),
             )
         )
+
 
 def test_detect_two_captains_mode(started_auction):
     started_auction.nominate(
@@ -346,7 +363,9 @@ def test_detect_two_captains_mode(started_auction):
 
     for time_remaining in started_auction.run_current_lot():
         if bids_to_make and len(bids_to_make) < 6:
-            assert time_remaining == TWO_CAPTAINS_MODE_TIMER - 1  # minus 1 because we've already run one second before it gets yielded
+            assert (
+                time_remaining == TWO_CAPTAINS_MODE_TIMER - 1
+            )  # minus 1 because we've already run one second before it gets yielded
         elif not bids_to_make:
             assert time_remaining < TWO_CAPTAINS_MODE_TIMER
 
@@ -363,22 +382,26 @@ def test_detect_two_captains_mode(started_auction):
 
             if len(bids_to_make) < 6:
                 # inserting the bid will change the timer
-                assert started_auction.current_lot.time_remaining == TWO_CAPTAINS_MODE_TIMER
-    
+                assert (
+                    started_auction.current_lot.time_remaining
+                    == TWO_CAPTAINS_MODE_TIMER
+                )
+
+
 def test_pop_nomination(running_auction):
-    player = running_auction.search_player('yolksoup')
-    assert player['is_picked']
-    captain = running_auction.search_captain('yfu')
-    starting_dollars = captain['dollars']
-    assert running_auction.get_next_captain()['name'] != 'yfu'
+    player = running_auction.search_player("yolksoup")
+    assert player["is_picked"]
+    captain = running_auction.search_captain("yfu")
+    starting_dollars = captain["dollars"]
+    assert running_auction.get_next_captain()["name"] != "yfu"
 
     popped_nomination = running_auction.pop_recent_nomination(0)
-    assert popped_nomination.player_name == 'yolksoup'
-    player = running_auction.search_player('yolksoup')
-    assert not player['is_picked']
+    assert popped_nomination.player_name == "yolksoup"
+    player = running_auction.search_player("yolksoup")
+    assert not player["is_picked"]
 
-    captain = running_auction.search_captain('yfu')
+    captain = running_auction.search_captain("yfu")
 
-    assert captain['dollars'] == starting_dollars + popped_nomination.amount_paid
+    assert captain["dollars"] == starting_dollars + popped_nomination.amount_paid
 
-    assert running_auction.get_next_captain()['name'] == 'yfu'
+    assert running_auction.get_next_captain()["name"] == "yfu"

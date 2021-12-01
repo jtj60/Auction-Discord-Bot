@@ -8,6 +8,7 @@ from collections import namedtuple
 from lot import Lot
 import playerlist_util
 
+
 class ClientMessageType:
     CHANNEL_MESSAGE = 0
     REACT = 1
@@ -16,8 +17,8 @@ class ClientMessageType:
 
 ClientMessage = namedtuple("ClientMessage", ["type", "data"])
 Nomination = namedtuple(
-    "Nomination", 
-    ["lot_id", "player_name", "player_mmr", "nominator", "captain", "amount_paid"]
+    "Nomination",
+    ["lot_id", "player_name", "player_mmr", "nominator", "captain", "amount_paid"],
 )
 
 ADMIN_IDS = [
@@ -31,11 +32,14 @@ class AuctionValidationError(Exception):
         super().__init__()
         self.client_message = client_message
 
+
 class InsufficientFundsError(AuctionValidationError):
     pass
 
+
 class TooLowBidError(AuctionValidationError):
     pass
+
 
 class BidAgainstSelfError(AuctionValidationError):
     pass
@@ -209,7 +213,7 @@ class Auction:
 
     def populate_captain_nominate_order(self):
         captains = sorted(self.db["captains"], key=lambda x: x["dollars"], reverse=True)
-        self.db['captain_nominate_order'] = captains * 4
+        self.db["captain_nominate_order"] = captains * 4
 
     def start(self, message):
         if self.is_admin(message):
@@ -225,10 +229,10 @@ class Auction:
             )
 
     def autonominate(self, next_eligible_captain):
-        pickable_players = [player for player in self.db["players"] if not player["is_picked"]]
-        players_by_mmr = sorted(
-            pickable_players, key=lambda x: x["mmr"], reverse=True
-        )
+        pickable_players = [
+            player for player in self.db["players"] if not player["is_picked"]
+        ]
+        players_by_mmr = sorted(pickable_players, key=lambda x: x["mmr"], reverse=True)
         player_to_autonominate = players_by_mmr[0]
         self.current_lot = Lot(
             player_to_autonominate["name"], next_eligible_captain["name"]
@@ -238,11 +242,11 @@ class Auction:
     def _validate_captain(self, message):
         message_body = self.parse_message_for_names(message)
         author_name = message.author.name
-        captain = self.search_captain(message_body['captain'])
+        captain = self.search_captain(message_body["captain"])
         if captain is None:
             return None
 
-        if author_name != captain['name']:
+        if author_name != captain["name"]:
             if not self.is_admin(message):
                 return None
         return captain
@@ -264,14 +268,14 @@ class Auction:
         if current_max_bid is None:
             return bid_amount
 
-        if bid_amount <= current_max_bid['amount']:
+        if bid_amount <= current_max_bid["amount"]:
             raise TooLowBidError(
                 client_message=ClientMessage(
                     ClientMessageType.REACT,
                     f"{bid_amount} is less than the current max bid.",
                 )
             )
-        if captain['name'] == current_max_bid['captain_name']:
+        if captain["name"] == current_max_bid["captain_name"]:
             raise BidAgainstSelfError(
                 client_message=ClientMessage(
                     ClientMessageType.REACT,
@@ -287,7 +291,7 @@ class Auction:
 
         message_body = self.parse_message_for_names(message)
         captain = self._validate_captain(message)
-        bid_amount = self._validate_bid_amount(message_body['amount'], captain)
+        bid_amount = self._validate_bid_amount(message_body["amount"], captain)
         if bid_amount is None:
             raise AuctionValidationError(
                 ClientMessage(
@@ -305,7 +309,7 @@ class Auction:
         message_body = self.parse_message_for_names(message)
         # TODO: Make sure this author was allowed to nominate
         nominated_on_behalf_of_captain = message.author.name
-        if not message_body['player']:
+        if not message_body["player"]:
             raise AuctionValidationError(
                 ClientMessage(
                     type=ClientMessageType.CHANNEL_MESSAGE,
@@ -313,8 +317,8 @@ class Auction:
                 )
             )
 
-        if message_body.get('captain') is not None:
-            nominated_on_behalf_of_captain = message_body['captain']
+        if message_body.get("captain") is not None:
+            nominated_on_behalf_of_captain = message_body["captain"]
             if not self.is_admin(message):
                 raise AuctionValidationError(
                     ClientMessage(
@@ -343,7 +347,7 @@ class Auction:
         if self.machine.state == "starting":
             self.machine.nom_from_start()
 
-        self.current_lot = Lot(message_body['player'], nominated_on_behalf_of_captain)
+        self.current_lot = Lot(message_body["player"], nominated_on_behalf_of_captain)
         self.machine.bid_from_nom()
         return self.current_lot
 
@@ -353,34 +357,31 @@ class Auction:
     def get_current_teams(self):
         teams_by_captain_name = {}
         for nomination in self.nominations:
-            teams_by_captain_name.setdefault(
-                nomination.captain, 
-                []
-            ).append(nomination)
+            teams_by_captain_name.setdefault(nomination.captain, []).append(nomination)
         return teams_by_captain_name
 
     def give_lot_to_winner(self):
         winning_bid = self.current_lot.winning_bid
-        player = self.search_player(winning_bid['player'])
-        captain = self.search_captain(winning_bid['captain'])
+        player = self.search_player(winning_bid["player"])
+        captain = self.search_captain(winning_bid["captain"])
         nomination = Nomination(
             lot_id=str(uuid.uuid4()),
-            player_mmr=player['mmr'],
-            player_name=player['name'],
-            captain=captain['name'],
+            player_mmr=player["mmr"],
+            player_name=player["name"],
+            captain=captain["name"],
             nominator=self.current_lot.nominator,
-            amount_paid=winning_bid['amount'],
+            amount_paid=winning_bid["amount"],
         )
 
         # Housekeeping
         self.pop_captain_from_nominate_order()
-        captain['dollars'] -= winning_bid['amount']
-        self.db['captians'] = self.captains
+        captain["dollars"] -= winning_bid["amount"]
+        self.db["captians"] = self.captains
         self.nominations.append(nomination)
         self.persist_key("nominations")
         player["is_picked"] = True
         self.persist_key("players")
-        
+
         return nomination
 
     def pop_captain_from_nominate_order(self):
@@ -395,13 +396,13 @@ class Auction:
         self.persist_key("nominations")
 
         captain = self.search_captain(nomination.captain)
-        captain['dollars'] += nomination.amount_paid
-        self.db['captians'] = self.captains
+        captain["dollars"] += nomination.amount_paid
+        self.db["captians"] = self.captains
 
         player = self.search_player(nomination.player_name)
         player["is_picked"] = False
         self.persist_key("players")
-        self.db['captain_nominate_order'].insert(0, captain)
+        self.db["captain_nominate_order"].insert(0, captain)
         return nomination
 
     def run_current_lot(self):
@@ -417,14 +418,14 @@ class Auction:
 
     def parse_message_for_names(self, message):
         message_body = {
-            'command': None,
-            'amount': None,
-            'player': None,
-            'captain': None,
+            "command": None,
+            "amount": None,
+            "player": None,
+            "captain": None,
         }
         message_parts = message.content.split()
-        if message_parts[0] == '$bid':
-            message_body['command'] = '$bid'
+        if message_parts[0] == "$bid":
+            message_body["command"] = "$bid"
             try:
                 amount = int(message_parts[1])
                 message_body["amount"] = amount
@@ -437,11 +438,11 @@ class Auction:
                 captain = self.search_captain(possible_name)
                 if captain:
                     message_body["captain"] = captain["name"]
-            
+
             return message_body
-        
-        if message_parts[0] == '$nominate':
-            message_body['command'] = '$nominate'
+
+        if message_parts[0] == "$nominate":
+            message_body["command"] = "$nominate"
 
             name_parts = message_parts[1:]
             for i in range(len(name_parts)):
@@ -461,7 +462,6 @@ class Auction:
 
                 return message_body
             return message_body
-            
 
     def player(self, message):
         message_parts = message.content.split()
@@ -503,7 +503,6 @@ class Auction:
                     data=f"Can't add {player_name}, improper formatting: command requires player name and player mmr seperated by spaces.",
                 )
             )
-
 
     def captain(self, message):
         message_parts = message.content.split()
