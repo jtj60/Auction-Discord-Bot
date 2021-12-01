@@ -103,10 +103,6 @@ class AuctionBot(commands.Cog):
                 await ctx.send(e.client_message.data)
 
     async def _nominate(self, ctx):
-        message_parts = ctx.message.content.split()
-        if not message_parts:
-            return None
-
         try:
             new_lot = self.auction.nominate(ctx.message)
         except AuctionValidationError as e:
@@ -177,11 +173,11 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def playerlist(self, ctx):
-        await ctx.send(embed=embed.playerlist())
+        await ctx.send(embed=embed.playerlist(self.auction.players))
 
     @commands.command()
     async def captainlist(self, ctx):
-        await ctx.send(embed=embed.captainlist())
+        await ctx.send(embed=embed.captainlist(self.auction.captains))
 
     @commands.command()
     async def playerinfo(self, ctx):

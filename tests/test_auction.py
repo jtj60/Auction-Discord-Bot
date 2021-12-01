@@ -24,6 +24,52 @@ def started_auction():
     )
     return auction
 
+@pytest.fixture
+def running_auction(started_auction):
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate toth Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    bid_successful = started_auction.bid(
+        message=mock.Mock(
+            content="$bid 100 Cev",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+
+    )
+    assert bid_successful
+    
+    for _ in started_auction.run_current_lot():
+        # Uneventful bid process :P
+        pass
+    started_auction.give_lot_to_winner()
+
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate yolksoup yfu",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+    )
+
+    bid_successful = started_auction.bid(
+        message=mock.Mock(
+            content="$bid 100 yfu",
+            author=mock.Mock(id=ADMIN_IDS[0]),
+        )
+
+    )
+    assert bid_successful
+    
+    for _ in started_auction.run_current_lot():
+        # Uneventful bid process :P
+        pass
+    started_auction.give_lot_to_winner()
+    return started_auction
+    
+
 
 def test_auction_start(started_auction):
     assert started_auction.machine.state == "starting"
@@ -179,7 +225,8 @@ def test_give_lot_to_winner_happycase(started_auction):
     captain = started_auction.search_captain("Cev")
     assert captain['dollars'] + completed_lot.amount_paid == starting_dollars
     assert started_auction.nominations[-1].lot_id == completed_lot.lot_id
-    assert started_auction.search_player('toth') is None
+    player = started_auction.search_player("toth")
+    assert player["is_picked"]
 
     assert started_auction.machine.state == "nominating"
 
@@ -314,7 +361,24 @@ def test_detect_two_captains_mode(started_auction):
             )
             assert success
 
-
             if len(bids_to_make) < 6:
                 # inserting the bid will change the timer
                 assert started_auction.current_lot.time_remaining == TWO_CAPTAINS_MODE_TIMER
+    
+def test_pop_nomination(running_auction):
+    player = running_auction.search_player('yolksoup')
+    assert player['is_picked']
+    captain = running_auction.search_captain('yfu')
+    starting_dollars = captain['dollars']
+    assert running_auction.get_next_captain()['name'] != 'yfu'
+
+    popped_nomination = running_auction.pop_recent_nomination(0)
+    assert popped_nomination.player_name == 'yolksoup'
+    player = running_auction.search_player('yolksoup')
+    assert not player['is_picked']
+
+    captain = running_auction.search_captain('yfu')
+
+    assert captain['dollars'] == starting_dollars + popped_nomination.amount_paid
+
+    assert running_auction.get_next_captain()['name'] == 'yfu'

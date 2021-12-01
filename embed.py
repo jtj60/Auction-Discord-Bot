@@ -2,8 +2,8 @@ import discord
 from replit import db
 
 
-def playerlist():
-    players = db["players"]
+def playerlist(players, is_picked=False):
+    players = [p for p in players if not p["is_picked"]]
     players = sorted(players, key=lambda x: x["mmr"], reverse=True)
 
     player_names = [p["name"] for p in players]
@@ -22,8 +22,7 @@ def playerlist():
     return embed
 
 
-def captainlist():
-    captains = db["captains"]
+def captainlist(captains):
     captains = sorted(captains, key=lambda x: x["dollars"], reverse=True)
 
     captain_names = [c["name"] for c in captains]

@@ -1,5 +1,7 @@
 # Remaining Tasks
 
+- Enforce nominate order, add test
+
 - Add Teams functionality
     * Teams display
     * Restart current lot
@@ -8,6 +10,9 @@
     * Transitioning from bidding <---> nomination
     * When nomination is successful
     * Winning bid
+
+- Nominate by nickname
+    eg. `$nominate Vuvu`, `nominate Chowmeins`
 
 - Channel whitelist 
 

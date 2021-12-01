@@ -134,6 +134,7 @@ class Auction:
         pos4="",
         pos5="",
         hero_drafter="",
+        is_picked=False,
     ):
         if self.checkPlayer(name):
             return False
@@ -150,6 +151,7 @@ class Auction:
             "pos4": pos4,
             "pos5": pos5,
             "hero_drafter": hero_drafter,
+            "is_picked": is_picked,
         }
         self.players.append(player)
         self.db["players"] = self.players
@@ -202,6 +204,7 @@ class Auction:
                 player["pos4"],
                 player["pos5"],
                 player["hero_drafter"],
+                is_picked=False,
             )
 
     def populate_captain_nominate_order(self):
@@ -222,8 +225,9 @@ class Auction:
             )
 
     def autonominate(self, next_eligible_captain):
+        pickable_players = [player for player in self.db["players"] if not player["is_picked"]]
         players_by_mmr = sorted(
-            self.db["players"], key=lambda x: x["mmr"], reverse=True
+            pickable_players, key=lambda x: x["mmr"], reverse=True
         )
         player_to_autonominate = players_by_mmr[0]
         self.current_lot = Lot(
@@ -374,7 +378,7 @@ class Auction:
         self.db['captians'] = self.captains
         self.nominations.append(nomination)
         self.persist_key("nominations")
-        self.players.remove(player)
+        player["is_picked"] = True
         self.persist_key("players")
         
         return nomination
@@ -383,6 +387,22 @@ class Auction:
         nominate_order = self.db["captain_nominate_order"]
         nominate_order.pop(0)
         self.db["captain_nominate_order"] = nominate_order
+
+    def pop_recent_nomination(self, nomination_offset=0):
+        if len(self.nominations) == 0:
+            return None
+        nomination = self.nominations.pop(len(self.nominations) - 1 - nomination_offset)
+        self.persist_key("nominations")
+
+        captain = self.search_captain(nomination.captain)
+        captain['dollars'] += nomination.amount_paid
+        self.db['captians'] = self.captains
+
+        player = self.search_player(nomination.player_name)
+        player["is_picked"] = False
+        self.persist_key("players")
+        self.db['captain_nominate_order'].insert(0, captain)
+        return nomination
 
     def run_current_lot(self):
         for time_remaining in self.current_lot.run_lot():
