@@ -74,6 +74,7 @@ class Auction:
         self.nominations = []
 
         self.current_lot = None
+        self.populate_from_db()
 
     def populate_from_db(self):
         if "captains" in self.db.keys():
@@ -217,7 +218,6 @@ class Auction:
 
     def start(self, message):
         if self.is_admin(message):
-            self.populate_from_db()
             self.machine.start_machine()
             self.populate_captain_nominate_order()
         else:
@@ -381,6 +381,8 @@ class Auction:
         self.persist_key("nominations")
         player["is_picked"] = True
         self.persist_key("players")
+
+        self.current_lot = None
 
         return nomination
 

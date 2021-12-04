@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 # This has to come first because it patches the env, and the replit-db looks for REPLIT_DB_URL in the env
 load_dotenv()
 from discord.ext import commands
+from discord.enums import ChannelType
 from replit import db
 from transitions import Machine
 
@@ -17,6 +18,14 @@ from lot import Lot
 from keep_alive import keep_alive
 
 client = commands.Bot(command_prefix="$")
+
+class UserType:
+    CAPTAIN = 1
+    PLAYER = 2
+    ADMIN = 3
+    ANY = 4
+
+GENERIC_DRAFT_CHANNEL_NAMES = ["draft", "draft-channel", "draft-chat", "general", "testing-channel"]
 
 
 @client.event
@@ -89,8 +98,45 @@ class AuctionBot(commands.Cog):
             return True
         return False
 
+    def whitelist(self, ctx, dm=None, channel=None, channel_names=None):
+        if dm is None:
+            dm = []
+        if channel is None:
+            channel = []
+        if channel_names is None:
+            channel_names = []
+
+        message_channel = ctx.channel
+        author = ctx.message.author
+        if message_channel.type == ChannelType.private:
+            # Is DM
+            if UserType.ANY in dm:
+                return True
+            elif self.is_admin(ctx) and UserType.ADMIN in dm:
+                return True
+            elif self.auction.search_captain(author.name) is not None and UserType.CAPTAIN in dm:
+                return True
+            elif self.auction.search_player(author.name) is not None and UserType.PLAYER in dm:
+                return True
+            return False
+        
+        if message_channel.type == ChannelType.text and message_channel.name in channel_names:
+            if UserType.ANY in channel:
+                return True
+            elif self.is_admin(ctx) and UserType.ADMIN in channel:
+                return True
+            elif self.auction.search_captain(author.name) is not None and UserType.CAPTAIN in channel:
+                return True
+            elif self.auction.search_player(author.name) is not None and UserType.PLAYER in channel:
+                return True
+            return False
+
+        return False
+
     @commands.command()
     async def start(self, ctx):
+        if not self.whitelist(ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES):
+            return
         try:
             self.auction.start(ctx.message)
             await ctx.send(
@@ -118,10 +164,12 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def nominate(self, ctx):
+        if not self.whitelist(ctx, channel=[UserType.ADMIN, UserType.CAPTAIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES):
+            return
         try:
             new_lot = await self._nominate(ctx)
             if new_lot is None:
-                await ctx.send("Invalid nomination, starting auto-nom timer")
+                await ctx.send("Invalid nomination, will default to autonom")
                 if self.current_timer is None:
                     next_elibible_captain = self.auction.get_next_captain()
                     self.current_timer = NominationTimer(
@@ -135,13 +183,14 @@ class AuctionBot(commands.Cog):
                     )
 
             # We have a nomination, run the lot
+            player_name = self.auction.current_lot.player
             print(f"Starting lot {self.auction.current_lot.to_dict()}")
-            await ctx.send(embed=embed.player_info(ctx.message))
+            await ctx.send(embed=embed.player_info(self.auction.search_player(player_name)))
             for time_remaining in self.auction.run_current_lot():
                 await asyncio.sleep(1)
                 if time_remaining > 0 and time_remaining % 10 == 0:
                     await ctx.send(
-                        f"{time_remaining} seconds left for player {self.auction.current_lot.player}"
+                        f"{time_remaining} seconds left for player {player_name}"
                     )
             self.auction.give_lot_to_winner()
 
@@ -151,6 +200,8 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def bid(self, ctx):
+        if not self.whitelist(ctx, channel=[UserType.ADMIN, UserType.CAPTAIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES):
+            return
         try:
             flag = self.auction.bid(ctx.message)
             if flag is not None:
@@ -173,18 +224,46 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def playerlist(self, ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ANY],
+            channel=[UserType.ADMIN, UserType.CAPTAIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
         await ctx.send(embed=embed.playerlist(self.auction.players))
 
     @commands.command()
     async def captainlist(self, ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ANY],
+            channel=[UserType.ADMIN, UserType.CAPTAIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
         await ctx.send(embed=embed.captainlist(self.auction.captains))
 
     @commands.command()
     async def playerinfo(self, ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ANY],
+            channel=[UserType.ADMIN, UserType.CAPTAIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
         await ctx.send(embed=embed.player_info(ctx.message))
 
     @commands.command()
     async def player(self, ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
         try:
             self.auction.player(ctx.message)
             await ctx.message.add_reaction(self.emojis["plus"])
@@ -195,6 +274,13 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def captain(self, ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
         try:
             self.auction.captain(ctx.message)
             await ctx.message.add_reaction(self.emojis["plus"])
@@ -205,14 +291,24 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def upload_test_lists(self, ctx):
-        if not self.is_admin(ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
             return
         self.auction.bootstrap_from_testlists()
         await ctx.send("Test lists uploaded")
 
     @commands.command()
     async def DELETE(self, ctx):
-        if not self.is_admin(ctx):
+        if not self.whitelist(
+            ctx, 
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN], 
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
             return
 
         await ctx.send("Are you sure you want to delete the database? y or n.")
@@ -234,7 +330,7 @@ class AuctionBot(commands.Cog):
 
 # keep_alive()
 if __name__ == "__main__":
-    client.add_cog(AuctionBot(client, debug=True))
+    client.add_cog(AuctionBot(client))
 
     # BOT TOKEN
     client.run(os.getenv("DISCORD_AUTH_TOKEN"))

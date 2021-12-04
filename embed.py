@@ -7,7 +7,7 @@ def playerlist(players, is_picked=False):
     players = sorted(players, key=lambda x: x["mmr"], reverse=True)
 
     player_names = [p["name"] for p in players]
-    player_mmr = [str(p["mmr"]) for p in players]
+    player_mmr = [str("{:.2f}".format(p["mmr"])) for p in players]
     player_names_string = "\n".join(player_names)
     player_mmr_string = "\n".join(player_mmr)
 
@@ -18,7 +18,7 @@ def playerlist(players, is_picked=False):
     )
 
     embed.add_field(name="Player:", value=player_names_string)
-    embed.add_field(name="MMR:", value=player_mmr_string)
+    embed.add_field(name="Draft Value:", value=player_mmr_string)
     return embed
 
 
@@ -41,9 +41,7 @@ def captainlist(captains):
     return embed
 
 
-def player_info(message):
-    players = db["players"]
-    message_parts = message.content.split()
+def player_info(player):
     preferences = [
         "Pos 1: ",
         "Pos 2: ",
@@ -53,27 +51,25 @@ def player_info(message):
         "Hero Drafter: ",
     ]
     pref_string = "\n".join(preferences)
-    name = message_parts[1]
-    for player in players:
-        if player["name"] == name:
-            ratings = [
-                player["pos1"],
-                player["pos2"],
-                player["pos3"],
-                player["pos4"],
-                player["pos5"],
-                player["hero_drafter"],
-            ]
-            ratings_string = "\n".join(ratings)
-            embed = discord.Embed(title="Player Info: ", color=0xE91E63)
-            embed.add_field(name="Name: ", value=player["name"], inline=True)
-            embed.add_field(name="Badge: ", value=player["badge"], inline=True)
-            embed.add_field(name="Opendota: ", value=player["opendota"], inline=False)
-            embed.add_field(name="Dotabuff: ", value=player["dotabuff"], inline=False)
-            embed.add_field(name="Preferences: ", value=pref_string, inline=True)
-            embed.add_field(name="(1-5) ", value=ratings_string, inline=True)
-            embed.add_field(name="Statement: ", value=player["statement"], inline=False)
-            return embed
+
+    ratings = [
+        player["pos1"],
+        player["pos2"],
+        player["pos3"],
+        player["pos4"],
+        player["pos5"],
+        player["hero_drafter"],
+    ]
+    ratings_string = "\n".join(ratings)
+    embed = discord.Embed(title="Player Info: ", color=0xE91E63)
+    embed.add_field(name="Name: ", value=player["name"], inline=True)
+    embed.add_field(name="Badge: ", value=player["badge"], inline=True)
+    embed.add_field(name="Opendota: ", value=player["opendota"], inline=False)
+    embed.add_field(name="Dotabuff: ", value=player["dotabuff"], inline=False)
+    embed.add_field(name="Preferences: ", value=pref_string, inline=True)
+    embed.add_field(name="(1-5) ", value=ratings_string, inline=True)
+    embed.add_field(name="Statement: ", value=player["statement"], inline=False)
+    return embed
 
 
 def winning_bid(lot):

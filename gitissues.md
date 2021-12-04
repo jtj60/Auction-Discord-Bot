@@ -1,6 +1,7 @@
 # Remaining Tasks
 
 - Enforce nominate order, add test
+- log all messages, author, channel, timestamp
 
 - Add Teams functionality
     * Teams display
@@ -10,6 +11,7 @@
     * Transitioning from bidding <---> nomination
     * When nomination is successful
     * Winning bid
+    * Switch plus/minus to green check/red X
 
 - Nominate by nickname
     eg. `$nominate Vuvu`, `nominate Chowmeins`

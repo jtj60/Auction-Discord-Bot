@@ -278,6 +278,7 @@ def test_give_lot_to_winner_multiple_bids(started_auction):
 
     captain = started_auction.search_captain("yfu")
     assert captain["dollars"] + completed_lot.amount_paid == starting_dollars
+    assert started_auction.current_lot is None
 
 
 def test_bid_below_minimum_raises(started_auction):
