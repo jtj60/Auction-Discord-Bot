@@ -23,6 +23,7 @@ class Lot:
         self.nominator = nominator
         self.time_remaining = None
         self.winning_bid = None
+        self.is_paused = False
 
     def to_dict(self):
         return dict(
@@ -82,6 +83,9 @@ class Lot:
     def run_lot(self, initial_timer=60):
         self.time_remaining = initial_timer
         while self.time_remaining > 0:
+            if self.is_paused:
+                yield None
+                continue
             self.time_remaining = self.time_remaining - 1
             # TODO: only yield sometimes?
             yield self.time_remaining

@@ -238,6 +238,7 @@ class Auction:
         self.current_lot = Lot(
             player_to_autonominate["name"], next_eligible_captain["name"]
         )
+        self.machine.bid_from_nom()
         return self.current_lot
 
     def _validate_captain(self, message):
@@ -310,6 +311,10 @@ class Auction:
         message_body = self.parse_message_for_names(message)
         # TODO: Make sure this author was allowed to nominate
         nominated_on_behalf_of_captain = message.author.name
+
+        if self.machine.state == "starting":
+            self.machine.nom_from_start()
+
         if not message_body["player"]:
             raise AuctionValidationError(
                 ClientMessage(
@@ -344,9 +349,6 @@ class Auction:
                         data=data,
                     )
                 )
-
-        if self.machine.state == "starting":
-            self.machine.nom_from_start()
 
         self.current_lot = Lot(message_body["player"], nominated_on_behalf_of_captain)
         self.machine.bid_from_nom()

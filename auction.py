@@ -19,13 +19,21 @@ from keep_alive import keep_alive
 
 client = commands.Bot(command_prefix="$")
 
+
 class UserType:
     CAPTAIN = 1
     PLAYER = 2
     ADMIN = 3
     ANY = 4
 
-GENERIC_DRAFT_CHANNEL_NAMES = ["draft", "draft-channel", "draft-chat", "general", "testing-channel"]
+
+GENERIC_DRAFT_CHANNEL_NAMES = [
+    "draft",
+    "draft-channel",
+    "draft-chat",
+    "general",
+    "testing-channel",
+]
 
 
 @client.event
@@ -39,9 +47,13 @@ class NominationTimer:
         self.captain_name = captain_name
         self.ctx = ctx
         self.cancelled = False
+        self.paused = False
 
     async def run(self):
         for i in range(self.t, 0, -1):
+            while self.paused:
+                await asyncio.sleep(1)
+
             if self.cancelled:
                 raise asyncio.CancelledError()
 
@@ -54,6 +66,12 @@ class NominationTimer:
                 await self.ctx.send(
                     f"{self.captain_name} has {i} seconds left to nominate a player."
                 )
+
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        self.paused = False
 
     def cancel(self):
         self.cancelled = True
@@ -110,20 +128,35 @@ class AuctionBot(commands.Cog):
                 return True
             elif self.is_admin(ctx) and UserType.ADMIN in dm:
                 return True
-            elif self.auction.search_captain(author.name) is not None and UserType.CAPTAIN in dm:
+            elif (
+                self.auction.search_captain(author.name) is not None
+                and UserType.CAPTAIN in dm
+            ):
                 return True
-            elif self.auction.search_player(author.name) is not None and UserType.PLAYER in dm:
+            elif (
+                self.auction.search_player(author.name) is not None
+                and UserType.PLAYER in dm
+            ):
                 return True
             return False
-        
-        if message_channel.type == ChannelType.text and message_channel.name in channel_names:
+
+        if (
+            message_channel.type == ChannelType.text
+            and message_channel.name in channel_names
+        ):
             if UserType.ANY in channel:
                 return True
             elif self.is_admin(ctx) and UserType.ADMIN in channel:
                 return True
-            elif self.auction.search_captain(author.name) is not None and UserType.CAPTAIN in channel:
+            elif (
+                self.auction.search_captain(author.name) is not None
+                and UserType.CAPTAIN in channel
+            ):
                 return True
-            elif self.auction.search_player(author.name) is not None and UserType.PLAYER in channel:
+            elif (
+                self.auction.search_player(author.name) is not None
+                and UserType.PLAYER in channel
+            ):
                 return True
             return False
 
@@ -131,7 +164,9 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def start(self, ctx):
-        if not self.whitelist(ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES):
+        if not self.whitelist(
+            ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
+        ):
             return
         try:
             self.auction.start(ctx.message)
@@ -160,7 +195,11 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def nominate(self, ctx):
-        if not self.whitelist(ctx, channel=[UserType.ADMIN, UserType.CAPTAIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES):
+        if not self.whitelist(
+            ctx,
+            channel=[UserType.ADMIN, UserType.CAPTAIN],
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
             return
         try:
             new_lot = await self._nominate(ctx)
@@ -178,12 +217,17 @@ class AuctionBot(commands.Cog):
                         f"Timer expired. Auto-nominator has nominated {new_lot.player} on behalf of {new_lot.nominator}"
                     )
 
+
             # We have a nomination, run the lot
             player_name = self.auction.current_lot.player
             print(f"Starting lot {self.auction.current_lot.to_dict()}")
-            await ctx.send(embed=embed.player_info(self.auction.search_player(player_name)))
+            await ctx.send(
+                embed=embed.player_info(self.auction.search_player(player_name))
+            )
             for time_remaining in self.auction.run_current_lot():
                 await asyncio.sleep(1)
+                if time_remaining is None:
+                    continue
                 if time_remaining > 0 and time_remaining % 10 == 0:
                     await ctx.send(
                         f"{time_remaining} seconds left for player {player_name}"
@@ -196,7 +240,11 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def bid(self, ctx):
-        if not self.whitelist(ctx, channel=[UserType.ADMIN, UserType.CAPTAIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES):
+        if not self.whitelist(
+            ctx,
+            channel=[UserType.ADMIN, UserType.CAPTAIN],
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
             return
         try:
             flag = self.auction.bid(ctx.message)
@@ -210,8 +258,36 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def pause(self, ctx):
-        if self.is_admin(ctx):
-            pass
+        #TODO: print out context like current captain if nomination state, or current player if bid state
+        if not self.whitelist(
+            ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
+        ):
+            return
+        print(
+            self.auction.machine.state,
+            type(self.auction.machine.state),
+            self.auction.machine.state == "nominating",
+        )
+        if self.auction.machine.state == "nominating":
+            self.current_timer.pause()
+            await ctx.send("Nomination timer paused.")
+        elif self.auction.machine.state == "bidding":
+            self.auction.current_lot.is_paused = True
+            await ctx.send("Bidding timer paused.")
+
+    @commands.command()
+    async def resume(self, ctx):
+        #TODO: print out context like current captain if nomination state, or current player if bid state
+        if not self.whitelist(
+            ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
+        ):
+            return
+        if self.auction.machine.state == "nominating":
+            self.current_timer.resume()
+            await ctx.send("Nomination timer resumed.")
+        elif self.auction.machine.state == "bidding":
+            self.auction.current_lot.is_paused = False
+            await ctx.send("Bidding timer resumed.")
 
     @commands.command()
     async def end(self, ctx):
@@ -221,9 +297,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def playerlist(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ANY],
-            channel=[UserType.ADMIN, UserType.CAPTAIN], 
+            channel=[UserType.ADMIN, UserType.CAPTAIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -232,9 +308,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def captainlist(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ANY],
-            channel=[UserType.ADMIN, UserType.CAPTAIN], 
+            channel=[UserType.ADMIN, UserType.CAPTAIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -243,9 +319,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def playerinfo(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ANY],
-            channel=[UserType.ADMIN, UserType.CAPTAIN], 
+            channel=[UserType.ADMIN, UserType.CAPTAIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -254,9 +330,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def player(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ADMIN],
-            channel=[UserType.ADMIN], 
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -271,9 +347,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def captain(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ADMIN],
-            channel=[UserType.ADMIN], 
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -288,9 +364,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def upload_test_lists(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ADMIN],
-            channel=[UserType.ADMIN], 
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -300,9 +376,9 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def DELETE(self, ctx):
         if not self.whitelist(
-            ctx, 
+            ctx,
             dm=[UserType.ADMIN],
-            channel=[UserType.ADMIN], 
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
