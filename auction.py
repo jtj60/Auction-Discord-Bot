@@ -67,11 +67,6 @@ class AuctionBot(commands.Cog):
         self.start = 10  # enter start timer
         self.nom = 30  # enter nominating timer
         self.bid = 60  # enter bidding timer
-        self.admins = [
-            411342580887060480,  # toth
-            181700384279101440,  # fspoon
-            135543804668280832,  # kden
-        ]
         self.league = "PST"  # enter league name
         self.emojis = {
             "plus": "<:plus:913878220489773099>",  # plus for bot reaction

@@ -24,6 +24,7 @@ Nomination = namedtuple(
 ADMIN_IDS = [
     411342580887060480,  # toth
     181700384279101440,  # fspoon
+    135543804668280832,  # kden
 ]
 
 
