@@ -40,6 +40,24 @@ GENERIC_DRAFT_CHANNEL_NAMES = [
 async def on_ready():
     print("Bot is ready.")
 
+class TransitionTracker: 
+    # Tracks the state of the draft for the auction, displays transitions in the channel
+    # Should always be running? 
+
+    def __init__(self, machine, ctx):
+        self.state_save = machine.state 
+        self.machine = machine
+        self.ctx = ctx
+
+    async def start(self):
+        while self.state_save == self.machine.state:  
+            await asyncio.sleep(.1)
+        
+        self.state_save = self.machine.state 
+        await self.ctx.send(
+            embed = embed.display_transition(self.state_save, self.machine.state)
+        )
+        await self.start()
 
 class NominationTimer:
     def __init__(self, t, captain_name, ctx):
@@ -95,6 +113,7 @@ class AuctionBot(commands.Cog):
         self.current_timer = None
         self.debug = debug
         self.auction = Auction()
+        self.transition_tracker = TransitionTracker(self.auction.machine)
 
     def rotateCaptainList(self):
         self.captains = db["captains"]
