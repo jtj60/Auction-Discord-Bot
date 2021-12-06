@@ -51,10 +51,10 @@ class TransitionTracker:
         await ctx.send(
             embed = embed.display_transition(self.state_save, self.machine.state)
         )
+        yield self.state_save, self.machine.state 
         print("Transitioned from" + self.state_save + " to " + self.machine.state)
-        await asyncio.sleep(1)
+        await asyncio.sleep(1) #This for whatever reason fixed an issue with the 2nd transition not being displayed
         self.state_save = self.machine.state 
-        #so smart, so swole, so dank <===== LEAVING THIS HERE BC COPILOT SUGGESTED THIS LOL 
         await self.start(ctx)
     
     async def send_transition_message(self, ctx): 
