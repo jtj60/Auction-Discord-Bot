@@ -96,6 +96,13 @@ def display_transition_to_nomination(lot):
     )
     return embed_end_bidding, embed_end_nomination
 
+def display_transition(state_1, state_2):
+    embed = discord.Embed(
+        title="State transition: ",
+        color=0x1ABC9C,
+        description="Transitioning to " + state_1 + " to " + state_2 + ".",
+    )
+    return embed
 
 def display_successful_nomination(lot, player):
     embed = discord.Embed(

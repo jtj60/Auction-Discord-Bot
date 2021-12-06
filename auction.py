@@ -40,6 +40,27 @@ GENERIC_DRAFT_CHANNEL_NAMES = [
 async def on_ready():
     print("Bot is ready.")
 
+class TransitionTracker: 
+    def __init__(self, machine):
+        self.state_save = "asleep" 
+        self.machine = machine
+
+    async def start(self, ctx):
+        while self.state_save == self.machine.state:  
+            await asyncio.sleep(1)
+        await ctx.send(
+            embed = embed.display_transition(self.state_save, self.machine.state)
+        )
+        yield self.state_save, self.machine.state 
+        print("Transitioned from" + self.state_save + " to " + self.machine.state)
+        await asyncio.sleep(1) #This for whatever reason fixed an issue with the 2nd transition not being displayed
+        self.state_save = self.machine.state 
+        await self.start(ctx)
+    
+    async def send_transition_message(self, ctx): 
+        await ctx.send(
+            embed = embed.display_transition(self.state_save, self.machine.state)
+        )
 
 class NominationTimer:
     def __init__(self, t, captain_name, ctx):
@@ -95,6 +116,11 @@ class AuctionBot(commands.Cog):
         self.current_timer = None
         self.debug = debug
         self.auction = Auction()
+        self.transition_tracker = TransitionTracker(self.auction.machine)
+    
+    async def run_transition_tracker(self, ctx): 
+        # we have to have this for stuff to work, idk why maybe im just dumb
+        await self.transition_tracker.start(ctx)
 
     def rotateCaptainList(self):
         self.captains = db["captains"]
@@ -175,6 +201,7 @@ class AuctionBot(commands.Cog):
             )
             await ctx.send(f"The draft will begin in {self.start} seconds.")
             await ctx.send("Draft starting.")
+            await self.run_transition_tracker(ctx)
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
