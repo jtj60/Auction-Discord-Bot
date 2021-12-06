@@ -3,7 +3,6 @@ from replit import db as replit_db
 from transitions import Machine
 import uuid
 import slugify
-import asyncio
 
 from collections import namedtuple
 from lot import Lot
