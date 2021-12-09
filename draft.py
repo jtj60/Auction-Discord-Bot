@@ -7,6 +7,7 @@ import slugify
 from collections import namedtuple
 from lot import Lot
 import playerlist_util
+from log_utils import log_state_transition
 
 
 class ClientMessageType:
@@ -68,6 +69,7 @@ class Auction:
         self.machine.add_transition("bid_from_nom", "nominating", "bidding")
         self.machine.add_transition("nom_from_bid", "bidding", "nominating")
         self.machine.add_transition("end_from_bid", "bidding", "ending")
+        self.machine.add_transition("end_from_nom", "nominating", "ending")
 
         self.captains = []
         self.players = []
@@ -76,6 +78,11 @@ class Auction:
 
         self.current_lot = None
         self.populate_from_db()
+
+        self.starting_ctx = None
+
+    def log_transition(self, *args, **kwargs):
+        log_state_transition(start_state="asleep", end_state="starting")
 
     def populate_from_db(self):
         if "captains" in self.db.keys():
@@ -221,6 +228,10 @@ class Auction:
         if self.is_admin(message):
             self.machine.start_machine()
             self.populate_captain_nominate_order()
+            return ClientMessage(
+                type=ClientMessageType.CHANNEL_MESSAGE,
+                data="Welcome to the Draft",
+            )
         else:
             raise AuctionValidationError(
                 ClientMessage(

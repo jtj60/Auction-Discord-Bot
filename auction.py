@@ -1,4 +1,5 @@
 import asyncio
+from logging import log
 import os
 
 from dotenv import load_dotenv
@@ -9,6 +10,7 @@ from discord.ext import commands
 from discord.enums import ChannelType
 from replit import db
 from transitions import Machine
+from log_utils import log_command
 
 from draft import Auction, AuctionValidationError, ClientMessageType
 from draft import ADMIN_IDS
@@ -164,17 +166,14 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def start(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
         ):
             return
         try:
-            self.auction.start(ctx.message)
-            await ctx.send(
-                f"Welcome to the {self.league} Blind Vickrey Auction Draft!!"
-            )
-            await ctx.send(f"The draft will begin in {self.start} seconds.")
-            await ctx.send("Draft starting.")
+            client_message = self.auction.start(ctx.message)
+            await ctx.send(client_message.data)
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
@@ -195,6 +194,8 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def nominate(self, ctx):
+        log_command(ctx)
+
         if not self.whitelist(
             ctx,
             channel=[UserType.ADMIN, UserType.CAPTAIN],
@@ -240,6 +241,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def bid(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             channel=[UserType.ADMIN, UserType.CAPTAIN],
@@ -258,16 +260,12 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def pause(self, ctx):
+        log_command(ctx)
         #TODO: print out context like current captain if nomination state, or current player if bid state
         if not self.whitelist(
             ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
         ):
             return
-        print(
-            self.auction.machine.state,
-            type(self.auction.machine.state),
-            self.auction.machine.state == "nominating",
-        )
         if self.auction.machine.state == "nominating":
             self.current_timer.pause()
             await ctx.send("Nomination timer paused.")
@@ -277,6 +275,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def resume(self, ctx):
+        log_command(ctx)
         #TODO: print out context like current captain if nomination state, or current player if bid state
         if not self.whitelist(
             ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
@@ -291,11 +290,13 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def end(self, ctx):
+        log_command(ctx)
         if self.is_admin(ctx):
             pass
 
     @commands.command()
     async def playerlist(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ANY],
@@ -307,6 +308,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def captainlist(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ANY],
@@ -318,6 +320,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def playerinfo(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ANY],
@@ -329,6 +332,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def player(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ADMIN],
@@ -346,6 +350,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def captain(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ADMIN],
@@ -363,6 +368,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def upload_test_lists(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ADMIN],
@@ -375,6 +381,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def DELETE(self, ctx):
+        log_command(ctx)
         if not self.whitelist(
             ctx,
             dm=[UserType.ADMIN],
