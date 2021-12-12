@@ -1,6 +1,6 @@
 import discord
 from replit import db
-
+from draft import Auction
 
 def playerlist(players, is_picked=False):
     players = [p for p in players if not p["is_picked"]]
@@ -107,4 +107,17 @@ def display_successful_nomination(lot, player):
     embed.add_field(name="MMR: ", value=player.mmr)
     embed.add_field(name="Statement: ", value=player.statement)
     embed.add_field(name="Nominated by: ", value=lot.nominator)
+    return embed
+
+
+def display_team(team):
+    embed = discord.Embed(
+        title=f'Team {team[0].player_name}',
+        color=0x1ABC9C,
+        description='',
+    )
+    embed.add_field(name=team[1].player_name, value=team[1].amount_paid, inline = False)
+    embed.add_field(name=team[2].player_name, value=team[2].amount_paid, inline = False)
+    embed.add_field(name=team[3].player_name, value=team[3].amount_paid, inline = False)
+    embed.add_field(name=team[4].player_name, value=team[4].amount_paid, inline = False)
     return embed

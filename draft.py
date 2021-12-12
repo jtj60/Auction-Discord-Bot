@@ -75,7 +75,7 @@ class Auction:
         self.players = []
         self.bids = []
         self.nominations = []
-
+        
         self.current_lot = None
         self.populate_from_db()
 

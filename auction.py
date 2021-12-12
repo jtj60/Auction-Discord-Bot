@@ -406,6 +406,11 @@ class AuctionBot(commands.Cog):
         elif msg.content.lower() == "n":
             await ctx.send("Databases not deleted.")
 
+    @commands.command()
+    async def team(self, ctx):
+        teams = Auction.get_current_teams(self)
+        for team in teams:
+            await ctx.send(embed = embed.display_team(team))
 
 # keep_alive()
 if __name__ == "__main__":
@@ -413,3 +418,4 @@ if __name__ == "__main__":
 
     # BOT TOKEN
     client.run(os.getenv("DISCORD_AUTH_TOKEN"))
+
