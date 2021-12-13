@@ -89,8 +89,8 @@ class AuctionBot(commands.Cog):
         self.bid = 60  # enter bidding timer
         self.league = "PST"  # enter league name
         self.emojis = {
-            "plus": "<:green_checkmark:920049176967020554>",  # plus for bot reaction
-            "minus": "<:red_x:920046598367621180>",  # minus for bot reaction
+            "check": "<:green_checkmark:920049176967020554>",  # check for bot reaction
+            "red x": "<:red_x:920046598367621180>",  # red x for bot reaction
         }
 
         self.client = client
@@ -251,11 +251,11 @@ class AuctionBot(commands.Cog):
         try:
             flag = self.auction.bid(ctx.message)
             if flag is not None:
-                await ctx.message.add_reaction(self.emojis["plus"])
+                await ctx.message.add_reaction(self.emojis["check"])
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
-                await ctx.message.add_reaction(self.emojis["minus"])
+                await ctx.message.add_reaction(self.emojis["red x"])
             return None
 
     @commands.command()
@@ -342,11 +342,11 @@ class AuctionBot(commands.Cog):
             return
         try:
             self.auction.player(ctx.message)
-            await ctx.message.add_reaction(self.emojis["plus"])
+            await ctx.message.add_reaction(self.emojis["check"])
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
-                await ctx.message.add_reaction(self.emojis["minus"])
+                await ctx.message.add_reaction(self.emojis["red x"])
 
     @commands.command()
     async def captain(self, ctx):
@@ -360,11 +360,11 @@ class AuctionBot(commands.Cog):
             return
         try:
             self.auction.captain(ctx.message)
-            await ctx.message.add_reaction(self.emojis["plus"])
+            await ctx.message.add_reaction(self.emojis["check"])
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
-                await ctx.message.add_reaction(self.emojis["minus"])
+                await ctx.message.add_reaction(self.emojis["red x"])
 
     @commands.command()
     async def upload_test_lists(self, ctx):
