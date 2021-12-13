@@ -110,14 +110,12 @@ def display_successful_nomination(lot, player):
     return embed
 
 
-def display_team(team):
+def display_team(captain, players):
     embed = discord.Embed(
-        title=f'Team {team[0].player_name}',
+        title=f'Team {captain}',
         color=0x1ABC9C,
         description='',
     )
-    embed.add_field(name=team[1].player_name, value=team[1].amount_paid, inline = False)
-    embed.add_field(name=team[2].player_name, value=team[2].amount_paid, inline = False)
-    embed.add_field(name=team[3].player_name, value=team[3].amount_paid, inline = False)
-    embed.add_field(name=team[4].player_name, value=team[4].amount_paid, inline = False)
+    for player in players:
+        embed.add_field(name=player.player_name, value=player.amount_paid, inline = False)
     return embed

@@ -370,7 +370,8 @@ class Auction:
 
     def get_current_teams(self):
         teams_by_captain_name = {}
-        for nomination in self.nominations:
+        for nomination in self.db['nominations']:
+            nomination = Nomination(*nomination)
             teams_by_captain_name.setdefault(nomination.captain, []).append(nomination)
         return teams_by_captain_name
 

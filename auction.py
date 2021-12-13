@@ -408,9 +408,9 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def team(self, ctx):
-        teams = Auction.get_current_teams(self)
-        for team in teams:
-            await ctx.send(embed = embed.display_team(team))
+        teams = self.auction.get_current_teams()
+        for keys, values in teams.items():
+            await ctx.send(embed = embed.display_team(keys, values))
 
 # keep_alive()
 if __name__ == "__main__":
