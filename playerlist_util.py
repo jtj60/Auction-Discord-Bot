@@ -91,8 +91,7 @@ def parse_captainlist_FHDL_csv(filename):
                 continue
 
             captain["name"] = row["Name:"]
-            mmr_value = row["Money:"]
-            captain["captain_bank"] = mmr_value
+            captain["captain_bank"] = int(row["Money:"])
 
             captains.append(captain)
         return sorted(captains, key=lambda x: x["captain_bank"], reverse=True)
