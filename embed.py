@@ -69,7 +69,8 @@ def player_info(player):
     embed.add_field(name="Dotabuff: ", value=player["dotabuff"], inline=False)
     embed.add_field(name="Preferences: ", value=pref_string, inline=True)
     embed.add_field(name="(1-5) ", value=ratings_string, inline=True)
-    embed.add_field(name="Statement: ", value=player["statement"], inline=False)
+    if player.get('statement'):
+        embed.add_field(name="Statement: ", value=player["statement"], inline=False)
     return embed
 
 
