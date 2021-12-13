@@ -1,5 +1,11 @@
 # Remaining Tasks
 
+- FOR TOMORROW:
+    * Captain Order on crash
+    * Display Stuff:
+        * 60 seconds msg on nomination
+        * emotes: green/red checks/x's
+
 - Enforce nominate order, add test
 - log all messages, author, channel, timestamp
 

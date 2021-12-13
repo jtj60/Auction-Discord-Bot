@@ -228,6 +228,14 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "slugify"
+version = "0.0.1"
+description = "A generic slugifier."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "transitions"
 version = "0.8.10"
 description = "A lightweight, object-oriented Python state machine implementation with many extensions."
@@ -289,7 +297,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f63d61cbe4392a4339d6af99a27849c84ef39a9411ba19c875e1908b496f663c"
+content-hash = "dbed2df4573e68f5d22f1dae8d4cea4116abceabfc380fe375c0e3c7943d9f05"
 
 [metadata.files]
 aiohttp = [
@@ -543,6 +551,9 @@ requests = [
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+slugify = [
+    {file = "slugify-0.0.1.tar.gz", hash = "sha256:c5703cc11c1a6947536f3ce8bb306766b8bb5a84a53717f5a703ce0f18235e4c"},
 ]
 transitions = [
     {file = "transitions-0.8.10-py2.py3-none-any.whl", hash = "sha256:2e9de3c453fafe3a8afef2c2bdc47e30a7a73e32d88f793ad4c1b6246f0cc364"},

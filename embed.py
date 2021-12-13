@@ -1,6 +1,6 @@
 import discord
 from replit import db
-
+from draft import Auction
 
 def playerlist(players, is_picked=False):
     players = [p for p in players if not p["is_picked"]]
@@ -12,7 +12,7 @@ def playerlist(players, is_picked=False):
     player_mmr_string = "\n".join(player_mmr)
 
     embed = discord.Embed(
-        title="Playerlist: ",
+        title="Player-list: ",
         color=0x1ABC9C,
         description="All remaining players in the draft pool.",
     )
@@ -31,7 +31,7 @@ def captainlist(captains):
     captain_dollars_string = "\n".join(captain_dollars)
 
     embed = discord.Embed(
-        title="Playerlist: ",
+        title="Captain-list: ",
         color=0x1ABC9C,
         description="All remaining players in the draft pool.",
     )
@@ -61,6 +61,7 @@ def player_info(player):
         player.get("hero_drafter", ""),
     ]
     ratings_string = "\n".join(ratings)
+    
     embed = discord.Embed(title="Player Info: ", color=0xE91E63)
     embed.add_field(name="Name: ", value=player["name"], inline=True)
     embed.add_field(name="MMR: ", value=player.get('mmr', ''), inline=True)
@@ -109,4 +110,21 @@ def display_successful_nomination(lot, player):
     embed.add_field(name="MMR: ", value=player.mmr)
     embed.add_field(name="Statement: ", value=player.statement)
     embed.add_field(name="Nominated by: ", value=lot.nominator)
+    return embed
+
+
+def display_team(captain, players):
+    names = '\n'.join([player.player_name for player in players])
+    amounts = '\n'.join([str(player.amount_paid) for player in players])
+    mmr = '\n'.join([str(player.player_mmr) for player in players])
+
+    embed = discord.Embed(
+        title=captain,
+        color=0x1ABC9C,
+        description='',
+    )
+
+    embed.add_field(name='Name', value=names, inline = True)
+    embed.add_field(name='MMR', value=mmr, inline = True)
+    embed.add_field(name='Amount', value=amounts, inline = True)
     return embed
