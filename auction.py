@@ -407,7 +407,7 @@ class AuctionBot(commands.Cog):
             await ctx.send("Databases not deleted.")
 
     @commands.command()
-    async def team(self, ctx):
+    async def teams(self, ctx):
         teams = self.auction.get_current_teams()
         for keys, values in teams.items():
             await ctx.send(embed = embed.display_team(keys, values))

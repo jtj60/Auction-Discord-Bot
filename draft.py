@@ -92,7 +92,7 @@ class Auction:
         if "bids" in self.db.keys():
             self.bids = self.db["bids"]
         if "nominations" in self.db.keys():
-            self.bids = self.db["nominations"]
+            self.nominations = self.db["nominations"]
 
     def persist_key(self, key):
         self.db[key] = getattr(self, key)

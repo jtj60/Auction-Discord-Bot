@@ -111,11 +111,17 @@ def display_successful_nomination(lot, player):
 
 
 def display_team(captain, players):
+    names = '\n'.join([player.player_name for player in players])
+    amounts = '\n'.join([str(player.amount_paid) for player in players])
+    mmr = '\n'.join([str(player.player_mmr) for player in players])
+
     embed = discord.Embed(
-        title=f'Team {captain}',
+        title=captain,
         color=0x1ABC9C,
         description='',
     )
-    for player in players:
-        embed.add_field(name=player.player_name, value=player.amount_paid, inline = False)
+
+    embed.add_field(name='Name', value=names, inline = True)
+    embed.add_field(name='MMR', value=mmr, inline = True)
+    embed.add_field(name='Amount', value=amounts, inline = True)
     return embed
