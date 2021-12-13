@@ -270,9 +270,10 @@ class AuctionBot(commands.Cog):
                 await ctx.send(
                     f"{time_remaining} seconds left for player {player_name}"
                 )
-        self.auction.give_lot_to_winner()
+        nomination = self.auction.give_lot_to_winner()
         # Yes, this is intentionally recursive. The idea is that the auction
         # should be able to run itself without human input.
+        await ctx.send(f"{nomination.player_name} goes to {nomination.captain} for {nomination.amount_paid}!")
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()
