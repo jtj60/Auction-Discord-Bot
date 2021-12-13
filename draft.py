@@ -1,5 +1,3 @@
-from replit import db as replit_db
-
 from transitions import Machine
 import uuid
 import slugify
@@ -53,6 +51,11 @@ class Auction:
         if db is not None:
             self.db = db
         else:
+            # This is kinda bad, doing the local import here, but if you import
+            # at top of file (before you load the dotenv) then the db wont be
+            # initialized
+            from replit import db as replit_db
+
             self.db = replit_db
 
         self.states = [
@@ -92,7 +95,7 @@ class Auction:
         if "bids" in self.db.keys():
             self.bids = self.db["bids"]
         if "nominations" in self.db.keys():
-            self.bids = self.db["nominations"]
+            self.nominations = self.db["nominations"]
 
     def persist_key(self, key):
         self.db[key] = getattr(self, key)
@@ -217,6 +220,26 @@ class Auction:
                 player["pos4"],
                 player["pos5"],
                 player["hero_drafter"],
+                is_picked=False,
+            )
+    
+    def bootstrap_fhdl(self):
+        playerlist = playerlist_util.parse_playerlist_FHDL_csv("fhdl_players.csv")
+        captainlist = playerlist_util.parse_captainlist_FHDL_csv("fhdl_captains.csv")
+        for captain in captainlist:
+            self.addCaptain(captain["name"], captain["captain_bank"])
+        
+        for player in playerlist:
+            self.addPlayer(
+                name=player["name"],
+                mmr=player["draft_value"],
+                dotabuff=player["dotabuff"],
+                statement=player["statement"],
+                pos1=player["pos1"],
+                pos2=player["pos2"],
+                pos3=player["pos3"],
+                pos4=player["pos4"],
+                pos5=player["pos5"],
                 is_picked=False,
             )
 
@@ -561,3 +584,15 @@ class Auction:
                     data=f"Can't add {captain_name}, improper formatting: command requires captain name and captain dollars seperated by spaces.",
                 )
             )
+
+def make_auction_for_shell():
+    from dotenv import load_dotenv
+    load_dotenv()
+    from replit import db
+    auction = Auction(db=db)
+    return auction
+
+if __name__ == "__main__":
+    auction = make_auction_for_shell()
+
+    auction.bootstrap_fhdl()
