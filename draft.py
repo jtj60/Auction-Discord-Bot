@@ -78,7 +78,7 @@ class Auction:
         self.players = []
         self.bids = []
         self.nominations = []
-        
+
         self.current_lot = None
         self.populate_from_db()
 
@@ -101,7 +101,7 @@ class Auction:
         self.db[key] = getattr(self, key)
 
     def delete_db(self):
-        for key in ["captains", "players", "bids", "captain_order", "nominations"]:
+        for key in ["captains", "players", "bids", "captain_nominate_order", "nominations"]:
             try:
                 setattr(self, key, [])
                 del self.db[key]
@@ -302,7 +302,7 @@ class Auction:
             captain_name = captain_name_in_message
         else:
             captain_name = author_name
-            
+
         captain = self.search_captain(captain_name)
         if captain is None:
             return None
