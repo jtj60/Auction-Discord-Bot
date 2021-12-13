@@ -351,6 +351,14 @@ class Auction:
 
         message_body = self.parse_message_for_names(message)
         captain = self._validate_captain(message)
+        if captain is None:
+            raise AuctionValidationError(
+                ClientMessage(
+                    ClientMessageType.REACT,
+                    "-",
+                )
+            )
+
         bid_amount = self._validate_bid_amount(message_body["amount"], captain)
         if bid_amount is None:
             raise AuctionValidationError(
@@ -359,7 +367,6 @@ class Auction:
                     "-",
                 )
             )
-            return
         if not self.current_lot:
             print("This shouldn't happen, in bidding state but no current lot")
         self.current_lot.add_bid(dict(captain_name=captain["name"], amount=bid_amount))
@@ -372,6 +379,14 @@ class Auction:
 
         if self.machine.state == "starting":
             self.machine.nom_from_start()
+        if self.machine.state == "bidding":
+            raise AuctionValidationError(
+                ClientMessage(
+                    type=ClientMessageType.CHANNEL_MESSAGE,
+                    data="Bidding currently in process, can't nominate now",
+                )
+            )
+            
 
         if not message_body["player"]:
             raise AuctionValidationError(
@@ -417,7 +432,7 @@ class Auction:
 
     def get_current_teams(self):
         teams_by_captain_name = {}
-        for nomination in self.db['nominations']:
+        for nomination in self.nominations:
             nomination = Nomination(*nomination)
             teams_by_captain_name.setdefault(nomination.captain, []).append(nomination)
         return teams_by_captain_name
@@ -509,7 +524,7 @@ class Auction:
             message_body["command"] = "$nominate"
 
             name_parts = message_parts[1:]
-            for i in range(len(name_parts)):
+            for i in range(len(name_parts) + 1):
                 player_name, captain_name = name_parts[:i], name_parts[i:]
                 player_name = " ".join(player_name)
                 captain_name = " ".join(captain_name)
@@ -523,8 +538,7 @@ class Auction:
                 message_body["player"] = player["name"]
                 if captain:
                     message_body["captain"] = captain["name"]
-
-                return message_body
+                    return message_body
             return message_body
 
     def player(self, message):

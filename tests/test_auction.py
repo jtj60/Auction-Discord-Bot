@@ -109,6 +109,24 @@ def test_admin_nominate_messy_player_messy_captain(started_auction):
     assert started_auction.current_lot.nominator == "Vuvuzela Virtuoso Hans Rudolph"
     assert started_auction.machine.state == "bidding"
 
+def test_captain_nominate_messy_player(started_auction):
+    captain = started_auction.get_next_captain()
+
+    # https://stackoverflow.com/questions/62552148/how-to-mock-name-attribute-with-unittest-mock-magicmock-or-mock-classes
+    author = mock.Mock()
+    author.id = 0
+    author.name = captain['name']
+
+    started_auction.nominate(
+        message=mock.Mock(
+            content="$nominate Linkdx {noflamevow}",
+            author=author,
+        )
+    )
+    
+    assert started_auction.current_lot.player == "Linkdx {noflamevow}"
+    assert started_auction.machine.state == "bidding"
+
 
 def test_nominate_whitespace_name(started_auction):
     (player,) = [
