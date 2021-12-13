@@ -242,6 +242,9 @@ class AuctionBot(commands.Cog):
         elif self.auction.machine.state == 'bidding':
             self.auction.machine.nom_from_bid()
         next_captain = self.auction.get_next_captain()
+        if next_captain is None:
+            await ctx.send("All done. *Throne exploding noises*")
+            return
         self.current_timer = NominationTimer(
             self.nom, next_captain['name'], ctx
         )

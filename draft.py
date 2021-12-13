@@ -197,7 +197,22 @@ class Auction:
         return False
 
     def get_next_captain(self):
-        return self.db["captain_nominate_order"][0]
+        if not self.db["captain_nominate_order"]:
+            return None
+        full_captains = set()
+        while self.db["captain_nominate_order"]:
+            captain = self.db["captain_nominate_order"][0]
+            if not self.captain_has_full_team(captain['name']):
+                return captain
+            self.pop_captain_from_nominate_order()
+            full_captains.add(captain['name'])
+
+            if len(list(full_captains)) == len(self.captains):
+                return None
+
+    def captain_has_full_team(self, captain_name):
+        teams = self.get_current_teams()
+        return len(teams.get(captain_name, [])) == 4
 
     def bootstrap_from_testlists(self):
         playerlist = playerlist_util.parse_playerlist_csv("test_playerlist.csv")
@@ -245,7 +260,8 @@ class Auction:
 
     def populate_captain_nominate_order(self):
         captains = sorted(self.db["captains"], key=lambda x: x["dollars"], reverse=True)
-        self.db["captain_nominate_order"] = captains * 4
+        if "captain_nominate_order" not in self.db or not self.db["captain_nominate_order"]:
+            self.db["captain_nominate_order"] = captains * 20
 
     def start(self, message):
         if self.is_admin(message):
@@ -278,13 +294,21 @@ class Auction:
     def _validate_captain(self, message):
         message_body = self.parse_message_for_names(message)
         author_name = message.author.name
-        captain = self.search_captain(message_body["captain"])
+        captain_name_in_message = message_body['captain']
+        captain_name = None
+        if captain_name_in_message:
+            if not self.is_admin(message):
+                return None
+            captain_name = captain_name_in_message
+        else:
+            captain_name = author_name
+            
+        captain = self.search_captain(captain_name)
         if captain is None:
             return None
 
-        if author_name != captain["name"]:
-            if not self.is_admin(message):
-                return None
+        if self.captain_has_full_team(captain["name"]):
+            return None
         return captain
 
     def _validate_bid_amount(self, bid_amount, captain):
