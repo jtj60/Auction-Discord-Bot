@@ -58,13 +58,14 @@ def player_info(player):
         player["pos3"],
         player["pos4"],
         player["pos5"],
-        player["hero_drafter"],
+        player.get("hero_drafter", ""),
     ]
     ratings_string = "\n".join(ratings)
     embed = discord.Embed(title="Player Info: ", color=0xE91E63)
     embed.add_field(name="Name: ", value=player["name"], inline=True)
-    embed.add_field(name="Badge: ", value=player["badge"], inline=True)
-    embed.add_field(name="Opendota: ", value=player["opendota"], inline=False)
+    embed.add_field(name="MMR: ", value=player.get('mmr', ''), inline=True)
+    if player.get('opendota'):
+        embed.add_field(name="Opendota: ", value=player.get('opendota', ''), inline=False)
     embed.add_field(name="Dotabuff: ", value=player["dotabuff"], inline=False)
     embed.add_field(name="Preferences: ", value=pref_string, inline=True)
     embed.add_field(name="(1-5) ", value=ratings_string, inline=True)
