@@ -89,8 +89,8 @@ class AuctionBot(commands.Cog):
         self.bid = 60  # enter bidding timer
         self.league = "PST"  # enter league name
         self.emojis = {
-            "plus": "<:plus:913878220489773099>",  # plus for bot reaction
-            "minus": "<:minus:913877912355229727>",  # minus for bot reaction
+            "plus": "<:green_checkmark:920049176967020554>",  # plus for bot reaction
+            "minus": "<:red_x:920046598367621180>",  # minus for bot reaction
         }
 
         self.client = client

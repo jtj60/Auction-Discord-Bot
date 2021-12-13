@@ -12,7 +12,7 @@ def playerlist(players, is_picked=False):
     player_mmr_string = "\n".join(player_mmr)
 
     embed = discord.Embed(
-        title="Playerlist: ",
+        title="Player-list: ",
         color=0x1ABC9C,
         description="All remaining players in the draft pool.",
     )
@@ -31,7 +31,7 @@ def captainlist(captains):
     captain_dollars_string = "\n".join(captain_dollars)
 
     embed = discord.Embed(
-        title="Playerlist: ",
+        title="Captain-list: ",
         color=0x1ABC9C,
         description="All remaining players in the draft pool.",
     )
@@ -61,6 +61,7 @@ def player_info(player):
         player["hero_drafter"],
     ]
     ratings_string = "\n".join(ratings)
+    
     embed = discord.Embed(title="Player Info: ", color=0xE91E63)
     embed.add_field(name="Name: ", value=player["name"], inline=True)
     embed.add_field(name="Badge: ", value=player["badge"], inline=True)
