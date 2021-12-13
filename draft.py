@@ -222,13 +222,13 @@ class Auction:
                 player["hero_drafter"],
                 is_picked=False,
             )
-    
+
     def bootstrap_fhdl(self):
         playerlist = playerlist_util.parse_playerlist_FHDL_csv("fhdl_players.csv")
         captainlist = playerlist_util.parse_captainlist_FHDL_csv("fhdl_captains.csv")
         for captain in captainlist:
             self.addCaptain(captain["name"], captain["captain_bank"])
-        
+
         for player in playerlist:
             self.addPlayer(
                 name=player["name"],

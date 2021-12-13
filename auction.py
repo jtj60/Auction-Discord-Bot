@@ -11,6 +11,7 @@ from discord.enums import ChannelType
 from replit import db
 from transitions import Machine
 from log_utils import log_command
+from log_utils import command_log
 
 from draft import Auction, AuctionValidationError, ClientMessageType
 from draft import ADMIN_IDS
@@ -52,6 +53,9 @@ class NominationTimer:
         self.paused = False
 
     async def run(self):
+        await self.ctx.send(
+            f"{self.captain_name} is the next captain to nominate. You have {self.t} seconds before auto-nominator nominates for you."
+        )
         for i in range(self.t, 0, -1):
             while self.paused:
                 await asyncio.sleep(1)
@@ -77,6 +81,45 @@ class NominationTimer:
 
     def cancel(self):
         self.cancelled = True
+
+class AutoLotTimer:
+    def __init__(self, t, lot, ctx):
+        self.t = t
+        self.lot = lot
+        self.ctx = ctx
+        self.cancelled = False
+        self.paused = False
+
+    async def run(self):
+        await self.ctx.send(
+            f"{self.captain_name} is the next captain to nominate. You have {self.t} seconds before auto-nominator nominates for you."
+        )
+        for i in range(self.t, 0, -1):
+            while self.paused:
+                await asyncio.sleep(1)
+
+            if self.cancelled:
+                raise asyncio.CancelledError()
+
+            await asyncio.sleep(1)
+            if i == 10:
+                await self.ctx.send(
+                    f"{self.captain_name} has {i} seconds left to nominate a player."
+                )
+            if i == 5:
+                await self.ctx.send(
+                    f"{self.captain_name} has {i} seconds left to nominate a player."
+                )
+
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        self.paused = False
+
+    def cancel(self):
+        self.cancelled = True
+
 
 
 CAPTAIN_NOMINATION_TIMEOUT = 30
@@ -177,6 +220,7 @@ class AuctionBot(commands.Cog):
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
+        await self._transition_to_nominating_and_start_timer(ctx)
 
     async def _nominate(self, ctx):
         try:
@@ -191,6 +235,46 @@ class AuctionBot(commands.Cog):
             self.current_timer = None
 
         return new_lot
+
+    async def _transition_to_nominating_and_start_timer(self, ctx):
+        if self.auction.machine.state == 'starting':
+            self.auction.machine.nom_from_start()
+        elif self.auction.machine.state == 'bidding':
+            self.auction.machine.nom_from_bid()
+        next_captain = self.auction.get_next_captain()
+        self.current_timer = NominationTimer(
+            self.nom, next_captain['name'], ctx
+        )
+        try:
+            await self.current_timer.run()
+            new_lot = self.auction.autonominate(next_captain)
+            await ctx.send(
+                f"Timer expired. Auto-nominator has nominated {new_lot.player} on behalf of {new_lot.nominator}"
+            )
+            await self._run_lot(ctx)
+        except asyncio.CancelledError:
+            return
+
+    async def _run_lot(self, ctx):
+        # We have a nomination, run the lot
+        player_name = self.auction.current_lot.player
+        print(f"Starting lot {self.auction.current_lot.to_dict()}")
+        await ctx.send(
+            embed=embed.player_info(self.auction.search_player(player_name))
+        )
+        for time_remaining in self.auction.run_current_lot():
+            await asyncio.sleep(1)
+            if time_remaining is None:
+                continue
+            if time_remaining > 0 and time_remaining % 10 == 0:
+                await ctx.send(
+                    f"{time_remaining} seconds left for player {player_name}"
+                )
+        nomination = self.auction.give_lot_to_winner()
+        # Yes, this is intentionally recursive. The idea is that the auction
+        # should be able to run itself without human input.
+        await ctx.send(f"{nomination.player_name} goes to {nomination.captain} for {nomination.amount_paid}!")
+        await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()
     async def nominate(self, ctx):
@@ -207,33 +291,11 @@ class AuctionBot(commands.Cog):
             if new_lot is None:
                 await ctx.send("Invalid nomination, will default to autonom")
                 if self.current_timer is None:
-                    next_elibible_captain = self.auction.get_next_captain()
-                    self.current_timer = NominationTimer(
-                        CAPTAIN_NOMINATION_TIMEOUT, next_elibible_captain["name"], ctx
+                    print("Invalid nomination and no autonom timer")
+                    command_log.warning(
+                        message="Invalid nomination and no autonom timer",
                     )
-                    await self.current_timer.run()
-                    self.current_timer = None
-                    new_lot = self.auction.autonominate(next_elibible_captain)
-                    await ctx.send(
-                        f"Timer expired. Auto-nominator has nominated {new_lot.player} on behalf of {new_lot.nominator}"
-                    )
-
-
-            # We have a nomination, run the lot
-            player_name = self.auction.current_lot.player
-            print(f"Starting lot {self.auction.current_lot.to_dict()}")
-            await ctx.send(
-                embed=embed.player_info(self.auction.search_player(player_name))
-            )
-            for time_remaining in self.auction.run_current_lot():
-                await asyncio.sleep(1)
-                if time_remaining is None:
-                    continue
-                if time_remaining > 0 and time_remaining % 10 == 0:
-                    await ctx.send(
-                        f"{time_remaining} seconds left for player {player_name}"
-                    )
-            self.auction.give_lot_to_winner()
+            await self._run_lot(ctx)
 
         except asyncio.CancelledError:
             print("Nomination timer cancelled successfully")
