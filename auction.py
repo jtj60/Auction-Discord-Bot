@@ -56,7 +56,7 @@ class NominationTimer:
 
     async def run(self):
         await self.ctx.send(
-            f"{self.captain_name} is the next captain to nominate. You have {self.t} seconds before auto-nominator nominates for you."
+            embed = embed.display_transition_to_nomination(self.captain_name, self.t)
         )
         for i in range(self.t, 0, -1):
             while self.paused:
@@ -240,11 +240,21 @@ class AuctionBot(commands.Cog):
 
     async def _run_lot(self, ctx):
         # We have a nomination, run the lot
-        player_name = self.auction.current_lot.player
+        player_name = self.auction.current_lot.player 
+        captain_name = self.auction.current_lot.nominator
         print(f"Starting lot {self.auction.current_lot.to_dict()}")
         await ctx.send(
-            embed=embed.player_info(self.auction.search_player(player_name))
+            embed=embed.player_info(
+                self.auction.search_player(player_name)
+            )
         )
+        await ctx.send(
+            embed=embed.display_successful_nomination(
+                self.auction.search_player(player_name),
+                self.auction.search_captain(captain_name)
+            )
+        )
+
         for time_remaining in self.auction.run_current_lot():
             await asyncio.sleep(1)
             if time_remaining is None:
@@ -256,7 +266,9 @@ class AuctionBot(commands.Cog):
         nomination = self.auction.give_lot_to_winner()
         # Yes, this is intentionally recursive. The idea is that the auction
         # should be able to run itself without human input.
-        await ctx.send(f"{nomination.player_name} goes to {nomination.captain} for {nomination.amount_paid}!")
+        await ctx.send(
+            embed=embed.winning_bid(nomination)
+        )
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()

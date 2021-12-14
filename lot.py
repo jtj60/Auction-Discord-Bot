@@ -10,7 +10,7 @@ async def timer(t):
         if i <= 5:
             yield
 
-
+INITIAL_BID_TIMER_DEFAULT = 60
 LOT_TIMING_STRUCTURE = [35, 30, 20, 15, 15, 15, 15, 10, 10]
 TWO_CAPTAINS_MODE_TIMER = 6
 
@@ -80,7 +80,7 @@ class Lot:
         else:
             return sorted(self.current_bids, key=lambda x: x["amount"])[-1]
 
-    def run_lot(self, initial_timer=60):
+    def run_lot(self, initial_timer=INITIAL_BID_TIMER_DEFAULT):
         self.time_remaining = initial_timer
         while self.time_remaining > 0:
             if self.is_paused:

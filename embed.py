@@ -1,6 +1,7 @@
 import discord
 from replit import db
 from draft import Auction
+from lot import INITIAL_BID_TIMER_DEFAULT
 
 def playerlist(players, is_picked=False):
     players = [p for p in players if not p["is_picked"]]
@@ -73,43 +74,32 @@ def player_info(player):
     if player.get('statement'):
         embed.add_field(name="Statement: ", value=player["statement"], inline=False)
     return embed
+    
 
-
-def winning_bid(lot):
+def winning_bid(nomination):
     embed = discord.Embed(
-        title="We have a winner!",
+        title= 'Bidding Over!',
         color=0x1ABC9C,
-        description="The winning bid is:",
+        description=f"{nomination.captain} has won the bidding on {nomination.player_name} for ${nomination.amount_paid}!",
     )
-    embed.add_field(name="Winner: ", value=lot.winning_bid["captain_name"])
-    embed.add_field(name="Amount: ", value=lot.winning_bid["bid_amount"])
-    embed.add_field(name="Player: ", value=lot.player)
     return embed
 
 
-def display_transition_to_nomination(lot):
-    embed_end_bidding = discord.Embed(
-        title="Bidding has ended!",
-        color=0x1ABC9C,
-    )
-    embed_end_nomination = discord.Embed(
-        title="Nomination phase ",
-        color=0x1ABC9C,
-        description="It is " + lot.nominator + "'s turn to nominate a player.",
-    )
-    return embed_end_bidding, embed_end_nomination
-
-
-def display_successful_nomination(lot, player):
+def display_transition_to_nomination(captain, timer):
     embed = discord.Embed(
-        title="Nomination: ",
+        title="Starting Nomination!",
         color=0x1ABC9C,
-        description="Nomination successful!",
+        description=f"{captain} is the next captain to nominate. You have {timer} seconds before the auto-nominator nominates for you.",
     )
-    embed.add_field(name="Player: ", value=player.name)
-    embed.add_field(name="MMR: ", value=player.mmr)
-    embed.add_field(name="Statement: ", value=player.statement)
-    embed.add_field(name="Nominated by: ", value=lot.nominator)
+    return embed
+
+
+def display_successful_nomination(player, captain):
+    embed = discord.Embed(
+        title=f"Nomination of {player['name']} by {captain['name']} successful!",
+        color=0x1ABC9C,
+        description=f'Bidding starting now, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
+    )
     return embed
 
 
