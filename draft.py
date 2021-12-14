@@ -372,8 +372,8 @@ class Auction:
             )
         if not self.current_lot:
             print("This shouldn't happen, in bidding state but no current lot")
-        self.current_lot.add_bid(dict(captain_name=captain["name"], amount=bid_amount))
-        return ClientMessage(ClientMessageType.REACT, "+")
+        time_remaining = self.current_lot.add_bid(dict(captain_name=captain["name"], amount=bid_amount))
+        return time_remaining
 
     def nominate(self, message):
         message_body = self.parse_message_for_names(message)

@@ -63,6 +63,7 @@ class Lot:
         ]
         if self._detect_two_captains_mode():
             self.time_remaining = TWO_CAPTAINS_MODE_TIMER
+        return self.time_remaining
 
     def _detect_two_captains_mode(self):
         recent_bids = self.current_bids[-6:]

@@ -309,9 +309,10 @@ class AuctionBot(commands.Cog):
         ):
             return
         try:
-            flag = self.auction.bid(ctx.message)
-            if flag is not None:
+            time_remaining = self.auction.bid(ctx.message)
+            if time_remaining is not None:
                 await ctx.message.add_reaction(self.emojis["plus"])
+                await ctx.send(f"{time_remaining} seconds left after latest bid.")
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
