@@ -56,7 +56,10 @@ class NominationTimer:
 
     async def run(self):
         await self.ctx.send(
-            embed = embed.display_transition_to_nomination(self.captain_name, self.t)
+            embed = embed.display_transition_to_nomination(
+                self.captain_name, 
+                CAPTAIN_NOMINATION_TIMEOUT,
+            )
         )
         for i in range(self.t, 0, -1):
             while self.paused:
