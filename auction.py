@@ -466,9 +466,17 @@ class AuctionBot(commands.Cog):
             await ctx.send("Database deleted.")
         elif msg.content.lower() == "n":
             await ctx.send("Databases not deleted.")
-
+    
     @commands.command()
     async def teams(self, ctx):
+        log_command(ctx)
+        if not self.whitelist(
+            ctx,
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN],
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
         teams = self.auction.get_current_teams()
         for keys, values in teams.items():
             await ctx.send(embed = embed.display_team(keys, values))
