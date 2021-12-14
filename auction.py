@@ -284,12 +284,12 @@ class AuctionBot(commands.Cog):
         try:
             new_lot = await self._nominate(ctx)
             if new_lot is None:
-                await ctx.send("Invalid nomination, will default to autonom")
-                if self.current_timer is None:
+                if self.auction.machine.state == 'nominating' and self.current_timer is None:
                     print("Invalid nomination and no autonom timer")
                     command_log.warning(
-                        message="Invalid nomination and no autonom timer",
+                        "Invalid nomination and no autonom timer",
                     )
+                return
             await self._run_lot(ctx)
 
         except asyncio.CancelledError:
