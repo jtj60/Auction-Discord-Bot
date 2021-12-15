@@ -134,7 +134,7 @@ class Auction:
             if slugify.slugify(player["name"]) == slugify.slugify(name):
                 return player
         return None
-
+        
     def clearCaptains(self):
         self.captains = []
         self.db["captains"] = self.captains
@@ -506,8 +506,8 @@ class Auction:
             "captain": None,
         }
         message_parts = message.content.split()
-        if message_parts[0] == "$bid":
-            message_body["command"] = "$bid"
+        if message_parts[0] == "!bid":
+            message_body["command"] = "!bid"
             try:
                 amount = int(message_parts[1])
                 message_body["amount"] = amount
@@ -523,8 +523,8 @@ class Auction:
 
             return message_body
 
-        if message_parts[0] == "$nominate":
-            message_body["command"] = "$nominate"
+        if message_parts[0] == "!nominate":
+            message_body["command"] = "!nominate"
 
             name_parts = message_parts[1:]
             for i in range(len(name_parts) + 1):

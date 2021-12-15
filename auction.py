@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 # This has to come first because it patches the env, and the replit-db looks for REPLIT_DB_URL in the env
 load_dotenv()
+import discord
 from discord.ext import commands
 from discord.enums import ChannelType
 from replit import db
@@ -20,7 +21,9 @@ import playerlist_util
 from lot import Lot
 from keep_alive import keep_alive
 
-client = commands.Bot(command_prefix="$")
+intents = discord.Intents.default()
+intents.members = True
+client = commands.Bot(command_prefix='!', intents=intents)
 
 
 class UserType:
@@ -61,6 +64,8 @@ class NominationTimer:
                 CAPTAIN_NOMINATION_TIMEOUT,
             )
         )
+        user = AuctionBot.get_mention(self.captain_name)
+        await self.ctx.send(user.mention)
         for i in range(self.t, 0, -1):
             while self.paused:
                 await asyncio.sleep(1)
@@ -88,13 +93,14 @@ class NominationTimer:
         self.cancelled = True
 
 
-CAPTAIN_NOMINATION_TIMEOUT = 30
+CAPTAIN_NOMINATION_TIMEOUT = 45
+BUFFER_TIMER = 30
 
 
 class AuctionBot(commands.Cog):
     def __init__(self, client, debug=False):
         self.start = 10  # enter start timer
-        self.nom = 30  # enter nominating timer
+        self.nom = 45  # enter nominating timer
         self.bid = 60  # enter bidding timer
         self.league = "PST"  # enter league name
         self.emojis = {
@@ -124,6 +130,11 @@ class AuctionBot(commands.Cog):
         if ctx.message.author.id in ADMIN_IDS or self.debug:
             return True
         return False
+    
+    def get_mention(name):
+        members = client.get_all_members()
+        user = discord.utils.get(members, name=name)
+        return user
 
     def whitelist(self, ctx, dm=None, channel=None, channel_names=None):
         if dm is None:
