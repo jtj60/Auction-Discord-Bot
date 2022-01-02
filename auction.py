@@ -104,7 +104,7 @@ class NominationTimer:
 
 
 CAPTAIN_NOMINATION_TIMEOUT = 45
-BUFFER_TIMER = 30
+BUFFER_TIMER = 10
 
 
 class AuctionBot(commands.Cog):
@@ -198,12 +198,11 @@ class AuctionBot(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message):
-        print('sdf')
-        if self.auction.machine.state == "nominating":
-            if not message.author.bot:
-                await message.delete()
+        if self.auction.machine.state == "buffering":
+            await message.delete()
+            # if not message.author.bot:
+            #     await message.delete()
     
-        await client.process_commands(message)
 
     @commands.command()
     async def start(self, ctx):
@@ -271,6 +270,12 @@ class AuctionBot(commands.Cog):
         except asyncio.CancelledError:
             return
 
+    async def buffer(self):
+        self.auction.machine.buff_from_nom()
+        print('buffering')
+        await asyncio.sleep(BUFFER_TIMER)
+        self.auction.machine.bid_from_buff()
+
     async def _run_lot(self, ctx):
         # We have a nomination, run the lot
         player_name = self.auction.current_lot.player 
@@ -284,15 +289,17 @@ class AuctionBot(commands.Cog):
         await ctx.send(
             embed=embed.display_successful_nomination(
                 self.auction.search_player(player_name),
-                self.auction.search_captain(captain_name)
+                self.auction.search_captain(captain_name),
+                BUFFER_TIMER
             )
         )
+        await self.buffer()
 
         for time_remaining in self.auction.run_current_lot():
             await asyncio.sleep(1)
             if time_remaining is None:
                 continue
-            if time_remaining > 0 and time_remaining % 10 == 0:
+            if time_remaining > 0 and time_remaining % 5 == 0:
                 await ctx.send(
                     f"{time_remaining} seconds left for player {player_name}"
                 )
