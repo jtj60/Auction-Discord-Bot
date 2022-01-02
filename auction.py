@@ -48,16 +48,6 @@ GENERIC_DRAFT_CHANNEL_NAMES = [
 async def on_ready():
     print("Bot is ready.")
 
-# @client.event
-# async def on_message(message):
-#     print('sdf')
-#     if auction.machine.state == "nominating":
-#         print('testtesttest')
-#         # ctx.message.delete()
-    
-#     await client.process_commands(message)
-
-
 
 class NominationTimer:
     def __init__(self, t, captain_name, ctx):
@@ -200,9 +190,6 @@ class AuctionBot(commands.Cog):
     async def on_message(self, message):
         if self.auction.machine.state == "buffering":
             await message.delete()
-            # if not message.author.bot:
-            #     await message.delete()
-    
 
     @commands.command()
     async def start(self, ctx):
