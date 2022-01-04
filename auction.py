@@ -37,7 +37,6 @@ GENERIC_DRAFT_CHANNEL_NAMES = [
     "draft",
     "draft-channel",
     "draft-chat",
-    "general",
     "testing-channel",
     "test-channel",
     "player-draft",
@@ -188,8 +187,13 @@ class AuctionBot(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message):
-        if self.auction.machine.state == "buffering":
-            await message.delete()
+        print(message.channel)
+        if message.channel.name in GENERIC_DRAFT_CHANNEL_NAMES:
+            if self.auction.machine.state == "buffering":                                                
+                if message.author.id in ADMIN_IDS:                                      # can't use whitelist method, on_message takes a message object, not ctx
+                    return
+                else:
+                    await message.delete()
 
     @commands.command()
     async def start(self, ctx):
