@@ -113,6 +113,7 @@ class AuctionBot(commands.Cog):
         self.current_timer = None
         self.debug = debug
         self.auction = Auction()
+        self.starting_context = None
 
     def rotateCaptainList(self):
         self.captains = db["captains"]
@@ -187,7 +188,6 @@ class AuctionBot(commands.Cog):
     
     @commands.Cog.listener()
     async def on_message(self, message):
-        print(message.channel)
         if message.channel == self.starting_context.channel:
             if self.auction.machine.state == "buffering":                                                
                 if message.author.id in ADMIN_IDS:                                      # can't use whitelist method, on_message takes a message object, not ctx
@@ -300,7 +300,7 @@ class AuctionBot(commands.Cog):
         await ctx.send(
             embed=embed.winning_bid(nomination)
         )
-        
+
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()
