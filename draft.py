@@ -68,6 +68,8 @@ class Auction:
             "bidding",
             "pausing",
             "ending",
+            "buffering",
+            "break"
         ]
         self.machine = Machine(states=self.states, initial="asleep")
         self.machine.add_transition("start_machine", "asleep", "starting")
@@ -76,6 +78,10 @@ class Auction:
         self.machine.add_transition("nom_from_bid", "bidding", "nominating")
         self.machine.add_transition("end_from_bid", "bidding", "ending")
         self.machine.add_transition("end_from_nom", "nominating", "ending")
+        self.machine.add_transition("buff_from_nom", "nominating", "buffering")
+        self.machine.add_transition("bid_from_buff", "buffering", "bidding")
+        self.machine.add_transition("break_from_bid", "bidding", "break")
+        self.machine.add_transition("nom_from_break", "break", "nominating")
 
         self.captains = []
         self.players = []
@@ -291,7 +297,6 @@ class Auction:
         self.current_lot = Lot(
             player_to_autonominate["name"], next_eligible_captain["name"]
         )
-        self.machine.bid_from_nom()
         return self.current_lot
 
     def _validate_captain(self, message):
@@ -427,7 +432,6 @@ class Auction:
                 )
 
         self.current_lot = Lot(message_body["player"], nominated_on_behalf_of_captain)
-        self.machine.bid_from_nom()
         return self.current_lot
 
     def clear_lot(self):
