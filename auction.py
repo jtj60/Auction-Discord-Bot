@@ -300,6 +300,7 @@ class AuctionBot(commands.Cog):
         await ctx.send(
             embed=embed.winning_bid(nomination)
         )
+        
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()
