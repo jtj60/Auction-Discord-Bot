@@ -10,8 +10,8 @@ async def timer(t):
         if i <= 5:
             yield
 
-INITIAL_BID_TIMER_DEFAULT = 5
-LOT_TIMING_STRUCTURE = [5, 30, 30, 30, 30, 30, 20, 20, 20, 15]
+INITIAL_BID_TIMER_DEFAULT = 45
+LOT_TIMING_STRUCTURE = [45, 30, 30, 30, 30, 30, 20, 20, 20, 15]
 TWO_CAPTAINS_MODE_TIMER = 15
 
 

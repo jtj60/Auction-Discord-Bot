@@ -92,18 +92,14 @@ class NominationTimer:
         self.cancelled = True
 
 
-CAPTAIN_NOMINATION_TIMEOUT = 5
-BUFFER_TIMER = 1
-BREAK_TIMER = 120
+CAPTAIN_NOMINATION_TIMEOUT = 45
+BUFFER_TIMER = 10
+BREAK_TIMER = 60
 NUMBER_OF_ROUNDS = 4
 
 
 class AuctionBot(commands.Cog):
     def __init__(self, client, debug=False):
-        self.start = 10  # enter start timer
-        self.nom = 45  # enter nominating timer
-        self.bid = 60  # enter bidding timer
-        self.league = "PST"  # enter league name
         self.emojis = {
             "check": "<:green_checkmark:920049176967020554>",  # check for bot reaction
             "red x": "<:red_x:920046598367621180>",  # red x for bot reaction
