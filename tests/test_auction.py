@@ -18,7 +18,7 @@ def started_auction():
     auction.bootstrap_from_testlists()
     auction.start(
         message=mock.Mock(
-            content="$start",
+            content="!start",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -29,14 +29,14 @@ def started_auction():
 def running_auction(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
 
     bid_successful = started_auction.bid(
         message=mock.Mock(
-            content="$bid 100 Cev",
+            content="!bid 100 Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -49,14 +49,14 @@ def running_auction(started_auction):
 
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate yolksoup yfu",
+            content="nominate yolksoup yfu",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
 
     bid_successful = started_auction.bid(
         message=mock.Mock(
-            content="$bid 100 yfu",
+            content="!bid 100 yfu",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -90,7 +90,7 @@ def test_admin_nominate(started_auction):
 def test_admin_nominate_messy_name(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate Linkdx {noflamevow} Cev",
+            content="!nominate Linkdx {noflamevow} Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -101,7 +101,7 @@ def test_admin_nominate_messy_name(started_auction):
 def test_admin_nominate_messy_player_messy_captain(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate Linkdx {noflamevow} Vuvuzela Virtuoso Hans Rudolph",
+            content="!nominate Linkdx {noflamevow} Vuvuzela Virtuoso Hans Rudolph",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -137,7 +137,7 @@ def test_nominate_whitespace_name(started_auction):
     assert player
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate ZombiesExpert Cev",
+            content="!nominate ZombiesExpert Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -153,7 +153,7 @@ def test_nominate_lowercase_name(started_auction):
     assert player
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate scrub Cev",
+            content="!nominate scrub Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -166,7 +166,7 @@ def test_nominate_typo_raises_auction_error(started_auction):
     with pytest.raises(AuctionValidationError):
         started_auction.nominate(
             message=mock.Mock(
-                content="$nominate typotypo Cev",
+                content="!nominate typotypo Cev",
                 author=mock.Mock(id=ADMIN_IDS[0]),
             )
         )
@@ -176,7 +176,7 @@ def test_admin_nominate_from_nonadmin_raises(started_auction):
     with pytest.raises(AuctionValidationError) as e:
         started_auction.nominate(
             message=mock.Mock(
-                content="$nominate toth Cev",
+                content="!nominate toth Cev",
                 author=mock.Mock(id=0),
             )
         )
@@ -185,7 +185,7 @@ def test_admin_nominate_from_nonadmin_raises(started_auction):
 def test_add_player_from_command(started_auction):
     started_auction.player(
         message=mock.Mock(
-            content="$player test 35",
+            content="!player test 35",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -197,7 +197,7 @@ def test_add_player_from_command(started_auction):
 def test_add_captain_from_command(started_auction):
     started_auction.captain(
         message=mock.Mock(
-            content="$captain test 1000",
+            content="!captain test 1000",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -206,14 +206,14 @@ def test_add_captain_from_command(started_auction):
 def test_bid_messy_name(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
     vuvu_name = "Vuvuzela Virtuoso Hans Rudolph"
     bid_successful = started_auction.bid(
         message=mock.Mock(
-            content=f"$bid 100 {vuvu_name}",
+            content=f"!bid 100 {vuvu_name}",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -224,7 +224,7 @@ def test_bid_messy_name(started_auction):
 def test_give_lot_to_winner_happycase(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -232,7 +232,7 @@ def test_give_lot_to_winner_happycase(started_auction):
     starting_dollars = started_auction.search_captain("Cev")["dollars"]
     bid_successful = started_auction.bid(
         message=mock.Mock(
-            content="$bid 100 Cev",
+            content="!bid 100 Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -272,7 +272,7 @@ def _run_bids(auction, bids):
 def test_give_lot_to_winner_multiple_bids(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -280,7 +280,7 @@ def test_give_lot_to_winner_multiple_bids(started_auction):
     starting_dollars = started_auction.search_captain("yfu")["dollars"]
     _run_bids(
         started_auction,
-        ["$bid 100 Cev", "$bid 150 yfu", "$bid 200 Cev", "$bid 300 yfu"],
+        ["!bid 100 Cev", "!bid 150 yfu", "!bid 200 Cev", "!bid 300 yfu"],
     )
 
     for _ in started_auction.run_current_lot():
@@ -302,16 +302,16 @@ def test_give_lot_to_winner_multiple_bids(started_auction):
 def test_bid_below_minimum_raises(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
-    _run_bids(started_auction, ["$bid 100 Cev"])
+    _run_bids(started_auction, ["!bid 100 Cev"])
 
     with pytest.raises(TooLowBidError) as e:
         started_auction.bid(
             message=mock.Mock(
-                content="$bid 100 yfu",
+                content="!bid 100 yfu",
                 author=mock.Mock(id=ADMIN_IDS[0]),
             )
         )
@@ -320,7 +320,7 @@ def test_bid_below_minimum_raises(started_auction):
 def test_bid_insufficient_funds(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
@@ -329,7 +329,7 @@ def test_bid_insufficient_funds(started_auction):
     with pytest.raises(InsufficientFundsError) as e:
         started_auction.bid(
             message=mock.Mock(
-                content=f"$bid {starting_dollar + 1} yfu",
+                content=f"!bid {starting_dollar + 1} yfu",
                 author=mock.Mock(id=ADMIN_IDS[0]),
             )
         )
@@ -338,16 +338,16 @@ def test_bid_insufficient_funds(started_auction):
 def test_cant_bid_against_yourself(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
 
-    _run_bids(started_auction, ["$bid 100 Cev"])
+    _run_bids(started_auction, ["!bid 100 Cev"])
     with pytest.raises(BidAgainstSelfError) as e:
         started_auction.bid(
             message=mock.Mock(
-                content="$bid 105 Cev",
+                content="!bid 105 Cev",
                 author=mock.Mock(id=ADMIN_IDS[0]),
             )
         )
@@ -356,28 +356,28 @@ def test_cant_bid_against_yourself(started_auction):
 def test_detect_two_captains_mode(started_auction):
     started_auction.nominate(
         message=mock.Mock(
-            content="$nominate toth Cev",
+            content="!nominate toth Cev",
             author=mock.Mock(id=ADMIN_IDS[0]),
         )
     )
 
     bids_to_make = [
-        "$bid 100 Cev",
-        "$bid 101 yfu",
-        "$bid 103 Cev",
-        "$bid 104 yfu",
-        "$bid 105 Cev",
-        "$bid 106 yfu",
-        "$bid 107 Cev",
-        "$bid 108 yfu",
-        "$bid 109 Cev",
-        "$bid 110 yfu",
-        "$bid 111 Cev",
-        "$bid 112 yfu",
-        "$bid 113 Cev",
-        "$bid 114 yfu",
-        "$bid 115 Cev",
-        "$bid 116 yfu",
+        "!bid 100 Cev",
+        "!bid 101 yfu",
+        "!bid 103 Cev",
+        "!bid 104 yfu",
+        "!bid 105 Cev",
+        "!bid 106 yfu",
+        "!bid 107 Cev",
+        "!bid 108 yfu",
+        "!bid 109 Cev",
+        "!bid 110 yfu",
+        "!bid 111 Cev",
+        "!bid 112 yfu",
+        "!bid 113 Cev",
+        "!bid 114 yfu",
+        "!bid 115 Cev",
+        "!bid 116 yfu",
     ]
 
     for time_remaining in started_auction.run_current_lot():
