@@ -94,11 +94,11 @@ def display_transition_to_nomination(captain, timer):
     return embed
 
 
-def display_successful_nomination(player, captain):
+def display_successful_nomination(player, captain, timer):
     embed = discord.Embed(
         title=f"Nomination of {player['name']} by {captain['name']} successful!",
         color=0x1ABC9C,
-        description=f'Bidding starting now, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
+        description=f'Bidding starts in {timer} seconds, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
     )
     return embed
 
