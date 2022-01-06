@@ -92,8 +92,10 @@ class NominationTimer:
         self.cancelled = True
 
 
-CAPTAIN_NOMINATION_TIMEOUT = 45
-BUFFER_TIMER = 10
+CAPTAIN_NOMINATION_TIMEOUT = 5
+BUFFER_TIMER = 1
+BREAK_TIMER = 120
+NUMBER_OF_ROUNDS = 4
 
 
 class AuctionBot(commands.Cog):
@@ -250,7 +252,7 @@ class AuctionBot(commands.Cog):
             await ctx.send("All done. *Throne exploding noises*")
             return
         self.current_timer = NominationTimer(
-            self.nom, next_captain['name'], ctx
+            CAPTAIN_NOMINATION_TIMEOUT, next_captain['name'], ctx
         )
         try:
             await self.current_timer.run()
@@ -266,6 +268,19 @@ class AuctionBot(commands.Cog):
         self.auction.machine.buff_from_nom()
         await asyncio.sleep(BUFFER_TIMER)
         self.auction.machine.bid_from_buff()
+    
+    async def take_break(self, ctx):
+        self.auction.machine.break_from_nom()
+        await ctx.send(embed=embed.display_break(BREAK_TIMER))
+        await asyncio.sleep(5)
+        await ctx.send(embed=embed.playerlist(self.auction.players))
+        await ctx.send(embed=embed.captainlist(self.auction.captains))
+        teams = self.auction.get_current_teams()
+        for keys, values in teams.items():
+            await ctx.send(embed = embed.display_team(keys, values))
+
+        await asyncio.sleep(BREAK_TIMER)
+        self.auction.machine.nom_from_break()
 
     async def _run_lot(self, ctx):
         # We have a nomination, run the lot
@@ -295,12 +310,15 @@ class AuctionBot(commands.Cog):
                     f"{time_remaining} seconds left for player {player_name}"
                 )
         nomination = self.auction.give_lot_to_winner()
-        # Yes, this is intentionally recursive. The idea is that the auction
-        # should be able to run itself without human input.
         await ctx.send(
             embed=embed.winning_bid(nomination)
         )
-
+        nom_break = len(self.auction.db["players"])/NUMBER_OF_ROUNDS
+        if len(self.auction.db["nominations"]) % nom_break == 0 and len(self.auction.db["nominations"]) > 0:
+            await self.take_break(ctx)
+        
+        # Yes, this is intentionally recursive. The idea is that the auction
+        # should be able to run itself without human input.
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()

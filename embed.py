@@ -118,3 +118,11 @@ def display_team(captain, players):
     embed.add_field(name='MMR', value=mmr, inline = True)
     embed.add_field(name='Amount', value=amounts, inline = True)
     return embed
+
+def display_break(timer):
+    embed = discord.Embed(
+        title='BREAK BETWEEN ROUNDS',
+        color=0x1ABC9C,
+        description=f'The draft will resume in {timer} seconds.',
+    )
+    return embed
