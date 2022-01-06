@@ -403,6 +403,16 @@ class Auction:
                     data="That player is not in the system.",
                 )
             )
+        player = self.search_player(message_body['player'])
+        if player['is_picked']:
+            raise AuctionValidationError(
+                ClientMessage(
+                    type=ClientMessageType.CHANNEL_MESSAGE,
+                    data="Cannot nominate a player that's already picked",
+                )
+            )
+
+
 
         if message_body.get("captain") is not None:
             nominated_on_behalf_of_captain = message_body["captain"]
