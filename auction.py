@@ -264,7 +264,6 @@ class AuctionBot(commands.Cog):
     
     async def buffer(self):
         self.auction.machine.buff_from_nom()
-        print('buffering')
         await asyncio.sleep(BUFFER_TIMER)
         self.auction.machine.bid_from_buff()
 
