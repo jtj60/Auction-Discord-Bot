@@ -188,7 +188,7 @@ class AuctionBot(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         print(message.channel)
-        if message.channel.name in GENERIC_DRAFT_CHANNEL_NAMES:
+        if message.channel == self.starting_context.channel:
             if self.auction.machine.state == "buffering":                                                
                 if message.author.id in ADMIN_IDS:                                      # can't use whitelist method, on_message takes a message object, not ctx
                     return
@@ -197,6 +197,7 @@ class AuctionBot(commands.Cog):
 
     @commands.command()
     async def start(self, ctx):
+        self.starting_context = ctx
         log_command(ctx)
         if not self.whitelist(
             ctx, channel=[UserType.ADMIN], channel_names=GENERIC_DRAFT_CHANNEL_NAMES
@@ -261,12 +262,6 @@ class AuctionBot(commands.Cog):
         except asyncio.CancelledError:
             return
     
-    async def check_for_break(self):
-        for 
-
-    async def round_break(self):
-        return 
-
     async def buffer(self):
         self.auction.machine.buff_from_nom()
         print('buffering')
@@ -306,9 +301,6 @@ class AuctionBot(commands.Cog):
         await ctx.send(
             embed=embed.winning_bid(nomination)
         )
-        self.check_for_break()
-        if self.auction.machine.state == 'break':
-            await self.round_break()
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()
