@@ -260,6 +260,12 @@ class AuctionBot(commands.Cog):
             await self._run_lot(ctx)
         except asyncio.CancelledError:
             return
+    
+    async def check_for_break(self):
+        for 
+
+    async def round_break(self):
+        return 
 
     async def buffer(self):
         self.auction.machine.buff_from_nom()
@@ -300,6 +306,9 @@ class AuctionBot(commands.Cog):
         await ctx.send(
             embed=embed.winning_bid(nomination)
         )
+        self.check_for_break()
+        if self.auction.machine.state == 'break':
+            await self.round_break()
         await self._transition_to_nominating_and_start_timer(ctx)
 
     @commands.command()

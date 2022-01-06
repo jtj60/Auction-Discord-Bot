@@ -69,6 +69,7 @@ class Auction:
             "pausing",
             "ending",
             "buffering",
+            "break"
         ]
         self.machine = Machine(states=self.states, initial="asleep")
         self.machine.add_transition("start_machine", "asleep", "starting")
@@ -79,6 +80,8 @@ class Auction:
         self.machine.add_transition("end_from_nom", "nominating", "ending")
         self.machine.add_transition("buff_from_nom", "nominating", "buffering")
         self.machine.add_transition("bid_from_buff", "buffering", "bidding")
+        self.machine.add_transition("break_from_bid", "bidding", "break")
+        self.machine.add_transition("nom_from_break", "break", "nominating")
 
         self.captains = []
         self.players = []
