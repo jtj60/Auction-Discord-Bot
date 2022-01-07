@@ -393,18 +393,12 @@ class AuctionBot(commands.Cog):
             await ctx.send("Bidding timer resumed.")
 
     @commands.command()
-    async def end(self, ctx):
-        log_command(ctx)
-        if self.is_admin(ctx):
-            pass
-
-    @commands.command()
     async def playerlist(self, ctx):
         log_command(ctx)
         if not self.whitelist(
             ctx,
-            dm=[UserType.ANY],
-            channel=[UserType.ADMIN, UserType.CAPTAIN],
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -415,8 +409,8 @@ class AuctionBot(commands.Cog):
         log_command(ctx)
         if not self.whitelist(
             ctx,
-            dm=[UserType.ANY],
-            channel=[UserType.ADMIN, UserType.CAPTAIN],
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
@@ -427,8 +421,8 @@ class AuctionBot(commands.Cog):
         log_command(ctx)
         if not self.whitelist(
             ctx,
-            dm=[UserType.ANY],
-            channel=[UserType.ADMIN, UserType.CAPTAIN],
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN],
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
