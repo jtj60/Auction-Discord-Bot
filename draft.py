@@ -395,6 +395,8 @@ class Auction:
                 )
             )
             
+        if not self.machine.state == 'nominating':
+            return    
 
         if not message_body["player"]:
             raise AuctionValidationError(
