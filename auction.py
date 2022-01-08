@@ -40,6 +40,7 @@ GENERIC_DRAFT_CHANNEL_NAMES = [
     "testing-channel",
     "test-channel",
     "player-draft",
+    "mock-draft"
 ]
 
 
@@ -57,6 +58,8 @@ class NominationTimer:
         self.paused = False
 
     async def run(self):
+        players_to_nom = db["players"]
+        await self.ctx.send(embed = embed.playerlist(players_to_nom))
         await self.ctx.send(
             embed = embed.display_transition_to_nomination(
                 self.captain_name, 
@@ -187,7 +190,7 @@ class AuctionBot(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.channel == self.starting_context.channel:
-            if self.auction.machine.state == "buffering":                                                
+            if self.auction.machine.state == "buffering" or self.auction.machine.state == 'break':                                                
                 if message.author.id in ADMIN_IDS:                                      # can't use whitelist method, on_message takes a message object, not ctx
                     return
                 else:
@@ -266,15 +269,17 @@ class AuctionBot(commands.Cog):
         self.auction.machine.bid_from_buff()
     
     async def take_break(self, ctx):
-        self.auction.machine.break_from_nom()
+        self.auction.machine.break_from_nom()  
         await ctx.send(embed=embed.display_break(BREAK_TIMER))
         await asyncio.sleep(5)
-        await ctx.send(embed=embed.playerlist(self.auction.players))
-        await ctx.send(embed=embed.captainlist(self.auction.captains))
+        
         teams = self.auction.get_current_teams()
-        for keys, values in teams.items():
-            await ctx.send(embed = embed.display_team(keys, values))
-
+        for captains, players in teams.items():
+            captain = self.auction.search_captain(captains)
+            bank = captain["dollars"]
+            await ctx.send(embed = embed.display_team(captains, bank, players))
+        await ctx.send(embed=embed.playerlist(self.auction.players))
+        
         await asyncio.sleep(BREAK_TIMER)
         self.auction.machine.nom_from_break()
 
@@ -283,11 +288,7 @@ class AuctionBot(commands.Cog):
         player_name = self.auction.current_lot.player 
         captain_name = self.auction.current_lot.nominator
         print(f"Starting lot {self.auction.current_lot.to_dict()}")
-        await ctx.send(
-            embed=embed.player_info(
-                self.auction.search_player(player_name)
-            )
-        )
+
         await ctx.send(
             embed=embed.display_successful_nomination(
                 self.auction.search_player(player_name),
@@ -295,6 +296,13 @@ class AuctionBot(commands.Cog):
                 BUFFER_TIMER
             )
         )
+        await ctx.send(embed=embed.captainlist(self.auction.captains))
+        await ctx.send(
+            embed=embed.player_info(
+                self.auction.search_player(player_name)
+            )
+        )
+
         await self.buffer()
 
         for time_remaining in self.auction.run_current_lot():
@@ -515,8 +523,10 @@ class AuctionBot(commands.Cog):
         ):
             return
         teams = self.auction.get_current_teams()
-        for keys, values in teams.items():
-            await ctx.send(embed = embed.display_team(keys, values))
+        for captains, players in teams.items():
+            captain = self.auction.search_captain(captains)
+            bank = captain["dollars"]
+            await ctx.send(embed = embed.display_team(captains, bank, players))
 
 # keep_alive()
 if __name__ == "__main__":

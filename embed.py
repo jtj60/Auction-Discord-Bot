@@ -14,7 +14,7 @@ def playerlist(players, is_picked=False):
 
     embed = discord.Embed(
         title="Player-list: ",
-        color=0x1ABC9C,
+        color=0x7289da,
         description="All remaining players in the draft pool.",
     )
 
@@ -33,8 +33,8 @@ def captainlist(captains):
 
     embed = discord.Embed(
         title="Captain-list: ",
-        color=0x1ABC9C,
-        description="All remaining players in the draft pool.",
+        color=0x7289da,
+        description="Captains and their remaining bank.",
     )
 
     embed.add_field(name="Player:", value=captain_names_string)
@@ -63,7 +63,7 @@ def player_info(player):
     ]
     ratings_string = "\n".join(ratings)
     
-    embed = discord.Embed(title="Player Info: ", color=0xE91E63)
+    embed = discord.Embed(title="Player Info: ", color=0x7289da)
     embed.add_field(name="Name: ", value=player["name"], inline=True)
     embed.add_field(name="MMR: ", value=player.get('mmr', ''), inline=True)
     if player.get('opendota'):
@@ -79,7 +79,7 @@ def player_info(player):
 def winning_bid(nomination):
     embed = discord.Embed(
         title= 'Bidding Over!',
-        color=0x1ABC9C,
+        color=0xc27c0e,
         description=f"{nomination.captain} has won the bidding on {nomination.player_name} for ${nomination.amount_paid}!",
     )
     return embed
@@ -88,7 +88,7 @@ def winning_bid(nomination):
 def display_transition_to_nomination(captain, timer):
     embed = discord.Embed(
         title="Starting Nomination!",
-        color=0x1ABC9C,
+        color=0xe91e63,
         description=f"{captain} is the next captain to nominate. You have {timer} seconds before the auto-nominator nominates for you.",
     )
     return embed
@@ -97,21 +97,21 @@ def display_transition_to_nomination(captain, timer):
 def display_successful_nomination(player, captain, timer):
     embed = discord.Embed(
         title=f"Nomination of {player['name']} by {captain['name']} successful!",
-        color=0x1ABC9C,
+        color=0xe91e63,
         description=f'Bidding starts in {timer} seconds, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
     )
     return embed
 
 
-def display_team(captain, players):
+def display_team(captain, bank, players):
     names = '\n'.join([player.player_name for player in players])
     amounts = '\n'.join([str(player.amount_paid) for player in players])
     mmr = '\n'.join([str(player.player_mmr) for player in players])
 
     embed = discord.Embed(
-        title=captain,
-        color=0x1ABC9C,
-        description='',
+        title=f'{captain}: ${bank}',
+        color=0x2ecc71,
+        description=f'',
     )
 
     embed.add_field(name='Name', value=names, inline = True)
@@ -122,7 +122,7 @@ def display_team(captain, players):
 def display_break(timer):
     embed = discord.Embed(
         title='BREAK BETWEEN ROUNDS',
-        color=0x1ABC9C,
+        color=0xe91e63,
         description=f'The draft will resume in {timer} seconds.',
     )
     return embed

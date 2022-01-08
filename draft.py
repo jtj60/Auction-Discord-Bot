@@ -22,11 +22,12 @@ Nomination = namedtuple(
 
 ADMIN_IDS = [
     411342580887060480,  # toth
-    181700384279101440,  # fspoon
-    135543804668280832,  # kden
-    127651622628229120,  # Tree
-    77615729142145024,  # Vuvu
-    146490789520867328,  # Clare
+    901244331904622592,  # AuctionBot
+    # 181700384279101440,  # fspoon
+    # 135543804668280832,  # kden
+    # 127651622628229120,  # Tree
+    # 77615729142145024,  # Vuvu
+    # 146490789520867328,  # Clare
 ]
 
 
@@ -167,7 +168,6 @@ class Auction:
             "name": name,
             "mmr": mmr,
             "badge": badge,
-            "opendota": opendota,
             "dotabuff": dotabuff,
             "statement": statement,
             "pos1": pos1,
@@ -175,7 +175,6 @@ class Auction:
             "pos3": pos3,
             "pos4": pos4,
             "pos5": pos5,
-            "hero_drafter": hero_drafter,
             "is_picked": is_picked,
         }
         self.players.append(player)
@@ -247,9 +246,9 @@ class Auction:
                 is_picked=False,
             )
 
-    def bootstrap_fhdl(self):
-        playerlist = playerlist_util.parse_playerlist_FHDL_csv("fhdl_players.csv")
-        captainlist = playerlist_util.parse_captainlist_FHDL_csv("fhdl_captains.csv")
+    def bootstrap_lists(self):
+        playerlist = playerlist_util.parse_playerlist("players.csv")
+        captainlist = playerlist_util.parse_captainlist("captains.csv")
         for captain in captainlist:
             self.addCaptain(captain["name"], captain["captain_bank"])
 
@@ -394,7 +393,7 @@ class Auction:
                     data="Bidding currently in process, can't nominate now",
                 )
             )
-            
+
         if not self.machine.state == 'nominating':
             return    
 
@@ -454,6 +453,7 @@ class Auction:
         for nomination in self.nominations:
             nomination = Nomination(*nomination)
             teams_by_captain_name.setdefault(nomination.captain, []).append(nomination)
+
         return teams_by_captain_name
 
     def give_lot_to_winner(self):
@@ -619,6 +619,7 @@ class Auction:
                     data=f"Can't add {captain_name}, that captain is already in the system.",
                 )
             )
+            
         if len(message_parts) > 2:
             captain_dollars = float(message_parts[2])
             if not self.checkNum(captain_dollars):
@@ -653,4 +654,4 @@ def make_auction_for_shell():
 if __name__ == "__main__":
     auction = make_auction_for_shell()
 
-    auction.bootstrap_fhdl()
+    auction.bootstrap_lists()
