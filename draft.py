@@ -128,9 +128,9 @@ class Auction:
 
     def search_captain(self, name):
         for captain in self.captains:
-            if captain["name"] == name:
+            if captain["name"].lower() == name.lower():
                 return captain
-            if slugify.slugify(captain["name"]) == slugify.slugify(name):
+            if slugify.slugify(captain["name"].lower()) == slugify.slugify(name).lower():
                 return captain
         return None
 
@@ -191,7 +191,7 @@ class Auction:
 
     def checkPlayer(self, name):
         for player in self.players:
-            if player["name"] == name:
+            if player["name"].lower() == name.lower():
                 return True
         return False
 
@@ -433,7 +433,7 @@ class Auction:
                 )
         else:
             next_eligible_captain = self.get_next_captain()
-            if nominated_on_behalf_of_captain != next_eligible_captain["name"]:
+            if nominated_on_behalf_of_captain.lower() != next_eligible_captain["name"].lower():
                 data = f"{nominated_on_behalf_of_captain} is not eligible to nominate at this time"
                 raise AuctionValidationError(
                     ClientMessage(
