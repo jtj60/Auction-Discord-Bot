@@ -8,7 +8,7 @@ def playerlist(players, is_picked=False):
     players = sorted(players, key=lambda x: x["mmr"], reverse=True)
 
     player_names = [p["name"] for p in players]
-    player_mmr = [str("{:.2f}".format(p["mmr"])) for p in players]
+    player_mmr = [str(p["mmr"]) for p in players]
     player_names_string = "\n".join(player_names)
     player_mmr_string = "\n".join(player_mmr)
 
@@ -19,7 +19,7 @@ def playerlist(players, is_picked=False):
     )
 
     embed.add_field(name="Player:", value=player_names_string)
-    embed.add_field(name="Draft Value:", value=player_mmr_string)
+    embed.add_field(name="MMR:", value=player_mmr_string)
     return embed
 
 

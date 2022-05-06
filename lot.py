@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 
 async def timer(t):
@@ -42,6 +43,15 @@ class Lot:
                 amount=0,
                 player=self.player,
             )
+        
+        elif sorted(self.current_bids, key=lambda x: x["amount"], reverse=True)[0]["all_in"] == True:
+            highest_bid_amount = sorted(self.current_bids, key=lambda x: x["amount"], reverse=True)[0]["amount"]
+            same_bids = []
+            for bid in self.current_bids:
+                if bid["amount"] == highest_bid_amount:
+                    same_bids.append(bid)
+            winning_bid = same_bids[random.randint(0, len(same_bids))]
+
         else:
             # For live auction
             winning_bid = sorted(
@@ -49,11 +59,12 @@ class Lot:
                 key=lambda x: x["amount"],
                 reverse=True,
             )[0]
-            return dict(
-                captain=winning_bid["captain_name"],
-                amount=winning_bid["amount"],
-                player=self.player,
-            )
+
+        return dict(
+            captain=winning_bid["captain_name"],
+            amount=winning_bid["amount"],
+            player=self.player,
+        )
 
     def add_bid(self, bid):
         self.current_bids.append(bid)

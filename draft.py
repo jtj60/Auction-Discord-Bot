@@ -335,6 +335,9 @@ class Auction:
         if current_max_bid is None:
             return bid_amount
 
+        if bid_amount >= current_max_bid["amount"] and self.is_captain_all_in(bid_amount, captain) == True:
+            return bid_amount
+
         if bid_amount <= current_max_bid["amount"]:
             raise TooLowBidError(
                 client_message=ClientMessage(
@@ -342,6 +345,7 @@ class Auction:
                     f"{bid_amount} is less than the current max bid.",
                 )
             )
+
         if captain["name"] == current_max_bid["captain_name"]:
             raise BidAgainstSelfError(
                 client_message=ClientMessage(
@@ -350,6 +354,11 @@ class Auction:
                 )
             )
         return bid_amount
+
+    def is_captain_all_in(self, bid_amount, captain):
+        if bid_amount == captain["dollars"]:
+            return True 
+        return False
 
     def bid(self, message):
         if self.machine.state != "bidding":
@@ -376,7 +385,7 @@ class Auction:
             )
         if not self.current_lot:
             print("This shouldn't happen, in bidding state but no current lot")
-        time_remaining = self.current_lot.add_bid(dict(captain_name=captain["name"], amount=bid_amount))
+        time_remaining = self.current_lot.add_bid(dict(captain_name=captain["name"], amount=bid_amount, all_in=self.is_captain_all_in(bid_amount, captain)))
         return time_remaining
 
     def nominate(self, message):
