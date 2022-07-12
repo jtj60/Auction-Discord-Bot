@@ -23,13 +23,12 @@ Nomination = namedtuple(
 ADMIN_IDS = [
     411342580887060480,  # toth
     901244331904622592,  # AuctionBot
+    215689154820833281,  # Buck
     # 181700384279101440,  # fspoon
     # 135543804668280832,  # kden
     # 127651622628229120,  # Tree
     # 77615729142145024,  # Vuvu
-    # 146490789520867328,  # Clare
 ]
-
 
 class AuctionValidationError(Exception):
     def __init__(self, client_message):
