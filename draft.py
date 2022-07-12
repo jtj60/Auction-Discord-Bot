@@ -31,7 +31,6 @@ ADMIN_IDS = [
     # 146490789520867328,  # Clare
 ]
 
-
 class AuctionValidationError(Exception):
     def __init__(self, client_message):
         super().__init__()
