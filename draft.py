@@ -28,7 +28,6 @@ ADMIN_IDS = [
     # 135543804668280832,  # kden
     # 127651622628229120,  # Tree
     # 77615729142145024,  # Vuvu
-    # 146490789520867328,  # Clare
 ]
 
 class AuctionValidationError(Exception):
