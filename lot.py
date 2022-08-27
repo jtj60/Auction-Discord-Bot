@@ -12,7 +12,7 @@ async def timer(t):
             yield
 
 INITIAL_BID_TIMER_DEFAULT = 45
-LOT_TIMING_STRUCTURE = [45, 30, 30, 30, 30, 30, 20, 20, 20, 15]
+LOT_TIMING_STRUCTURE = [45, 30, 30, 30, 30, 20, 20, 20, 15]
 TWO_CAPTAINS_MODE_TIMER = 15
 
 
@@ -44,21 +44,16 @@ class Lot:
                 player=self.player,
             )
         
-        elif sorted(self.current_bids, key=lambda x: x["amount"], reverse=True)[0]["all_in"] == True:
-            highest_bid_amount = sorted(self.current_bids, key=lambda x: x["amount"], reverse=True)[0]["amount"]
-            same_bids = []
-            for bid in self.current_bids:
-                if bid["amount"] == highest_bid_amount:
-                    same_bids.append(bid)
-            winning_bid = same_bids[random.randint(0, len(same_bids))]
 
-        else:
-            # For live auction
-            winning_bid = sorted(
-                self.current_bids,
-                key=lambda x: x["amount"],
-                reverse=True,
-            )[0]
+        highest_bid_amount = sorted(self.current_bids, key=lambda x: x["amount"], reverse=True)[0]["amount"]
+        same_bids = []
+        for bid in self.current_bids:
+            if bid["amount"] == highest_bid_amount:
+                same_bids.append(bid)
+        
+        #Our PM has confirmed there can be multiple 'tied' bids if captains go 'all in' for players, 
+        #and that it should be handled by random selection.
+        winning_bid = random.choice(same_bids)
 
         return dict(
             captain=winning_bid["captain_name"],

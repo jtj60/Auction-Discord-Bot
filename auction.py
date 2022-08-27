@@ -34,7 +34,7 @@ class UserType:
 
 
 GENERIC_DRAFT_CHANNEL_NAMES = [
-    "draft",
+    "auction-room",
     "draft-channel",
     "draft-chat",
     "testing-channel",
@@ -95,7 +95,7 @@ class NominationTimer:
         self.cancelled = True
 
 
-CAPTAIN_NOMINATION_TIMEOUT = 45
+CAPTAIN_NOMINATION_TIMEOUT = 30
 BUFFER_TIMER = 10
 BREAK_TIMER = 60
 NUMBER_OF_ROUNDS = 4
@@ -108,6 +108,8 @@ class AuctionBot(commands.Cog):
             "red x": "<:red_x:920046598367621180>",  # red x for bot reaction
             "plus": "👍",  # plus for bot reaction
             "minus": "👎",  # minus for bot reaction
+            "nice": "<:nice:819405494582116352>",
+            "itachi": "<:feelsitachi:623349544574517248>",
         }
 
         self.client = client
@@ -325,6 +327,18 @@ class AuctionBot(commands.Cog):
         # should be able to run itself without human input.
         await self._transition_to_nominating_and_start_timer(ctx)
 
+    # async def bid_fun(self, ctx):
+    #     if self.auction.parse_message_for_names(ctx.message)['amount'] == 69:
+    #             await ctx.send(self.emojis["nice"])
+
+    #     if ctx.message.author == 'itachi':
+    #         await ctx.send(self.emojis['itachi'])
+        
+    #     if self.auction.parse_message_for_names(ctx.message)['player'] == 'Tree':
+    #         await ctx.author.send("STOP GRIEFING TREE")
+
+        #if self.auction.parse_message_for_names(ctx.message)['']
+
     @commands.command()
     async def nominate(self, ctx):
         log_command(ctx)
@@ -361,6 +375,7 @@ class AuctionBot(commands.Cog):
             return
         try:
             time_remaining = self.auction.bid(ctx.message)
+            # await self.bid_fun(ctx)
             if time_remaining is not None:
                 await ctx.message.add_reaction(self.emojis["plus"])
                 await ctx.send(f"{time_remaining} seconds left after latest bid.")
