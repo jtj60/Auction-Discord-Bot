@@ -504,7 +504,7 @@ class Auction:
 
         captain = self.search_captain(nomination.captain)
         captain["dollars"] += nomination.amount_paid
-        self.db["captians"] = self.captains
+        self.db["captains"] = self.captains
 
         player = self.search_player(nomination.player_name)
         player["is_picked"] = False

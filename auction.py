@@ -118,16 +118,6 @@ class AuctionBot(commands.Cog):
         self.auction = Auction()
         self.starting_context = None
 
-    def rotateCaptainList(self):
-        self.captains = db["captains"]
-        cap = self.captains[0]
-        self.captains.append(cap)
-        self.captains.pop(0)
-        db["captains"] = self.captains
-
-    def clearCaptains(self):
-        self.captains.clear()
-        db["captains"] = self.captains
 
     def is_admin(self, ctx):
         if ctx.message.author.id in ADMIN_IDS or self.debug:
@@ -449,7 +439,7 @@ class AuctionBot(commands.Cog):
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
-        await ctx.send(embed=embed.player_info(ctx.message))
+        await ctx.send(embed=embed.player_info(self.auction.search_player(ctx.message)))
 
     @commands.command()
     async def player(self, ctx):
@@ -542,6 +532,55 @@ class AuctionBot(commands.Cog):
             captain = self.auction.search_captain(captains)
             bank = captain["dollars"]
             await ctx.send(embed = embed.display_team(captains, bank, players))
+    
+    @commands.command()
+    async def admin(self, ctx):
+        log_command(ctx)
+        if not self.whitelist(
+            ctx,
+            dm=[UserType.ADMIN],
+            channel=[UserType.ADMIN],
+            channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
+        ):
+            return
+
+        await ctx.send("Are you sure you want to revert the last nomination?")
+
+        def check(msg)
+            return (
+                msg.author == ctx.author
+                and msg.channel == ctx.channel
+                and msg.content.lower() in ["y", "n"]
+            )
+        msg = await client.wait_for("message", check=check)
+
+        if msg.content.lower() == "y":
+            self.auction.pop_recent_nomination()
+            await ctx.send("Nomination reverted.")
+        elif msg.content.lower() == "n":
+            await ctx.send("Nomination not reverted.")
+
+        
+    def undo_last_nomination_round(self, player_name, captain_name, amount):
+        self.auction.pop_recent_nomination()
+    
+    # def fix_bank(self, captain_name, amount):
+    #     captain = self.auction.search_captain(captain_name)
+    #     captain["dollars"] = amount
+    #     self.auction.db["captians"] = self.auction.captains
+    
+    # def fix_player_pool(self, player_name, captain_name):
+    #     player = self.auction.search_player(player_name)
+    #     captain = self.auction.search_captain(captain_name)
+
+    #     for nomination in self.auction.nominations:
+    #         if captain['name'] == nomination.captain and player['name'] == nomination.player:
+    #             player['is_picked'] = False
+
+        
+
+
+    def add_player_to_team(self, player_name, captain_name):
 
 # keep_alive()
 if __name__ == "__main__":
