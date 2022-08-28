@@ -23,6 +23,7 @@ from keep_alive import keep_alive
 
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 client = commands.Bot(command_prefix='!', intents=intents)
 
 
@@ -534,7 +535,7 @@ class AuctionBot(commands.Cog):
             await ctx.send(embed = embed.display_team(captains, bank, players))
     
     @commands.command()
-    async def admin(self, ctx):
+    async def undo(self, ctx):
         log_command(ctx)
         if not self.whitelist(
             ctx,
@@ -543,10 +544,9 @@ class AuctionBot(commands.Cog):
             channel_names=GENERIC_DRAFT_CHANNEL_NAMES,
         ):
             return
-
         await ctx.send("Are you sure you want to revert the last nomination?")
 
-        def check(msg)
+        def check(msg):
             return (
                 msg.author == ctx.author
                 and msg.channel == ctx.channel
@@ -561,8 +561,8 @@ class AuctionBot(commands.Cog):
             await ctx.send("Nomination not reverted.")
 
         
-    def undo_last_nomination_round(self, player_name, captain_name, amount):
-        self.auction.pop_recent_nomination()
+    def undo_last_nomination_round(self, amount):
+        self.auction.pop_recent_nomination(amount)
     
     # def fix_bank(self, captain_name, amount):
     #     captain = self.auction.search_captain(captain_name)
@@ -577,15 +577,15 @@ class AuctionBot(commands.Cog):
     #         if captain['name'] == nomination.captain and player['name'] == nomination.player:
     #             player['is_picked'] = False
 
-        
 
+# if __name__ == "__main__":
+#     client.add_cog(AuctionBot(client))
 
-    def add_player_to_team(self, player_name, captain_name):
+#     # BOT TOKEN
+#     client.run(os.getenv("DISCORD_AUTH_TOKEN"))
 
-# keep_alive()
-if __name__ == "__main__":
-    client.add_cog(AuctionBot(client))
-
-    # BOT TOKEN
-    client.run(os.getenv("DISCORD_AUTH_TOKEN"))
-
+async def main():
+    async with client:
+        await client.add_cog(AuctionBot(client))
+        await client.start(os.getenv("DISCORD_AUTH_TOKEN"))
+asyncio.run(main())
