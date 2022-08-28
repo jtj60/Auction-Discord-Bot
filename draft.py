@@ -26,7 +26,7 @@ ADMIN_IDS = [
     215689154820833281,  # Buck
     # 181700384279101440,  # fspoon
     # 135543804668280832,  # kden
-    # 127651622628229120,  # Tree
+    127651622628229120,  # Tree
     # 77615729142145024,  # Vuvu
 ]
 
@@ -71,6 +71,7 @@ class Auction:
             "buffering",
             "break"
         ]
+        
         self.machine = Machine(states=self.states, initial="asleep")
         self.machine.add_transition("start_machine", "asleep", "starting")
         self.machine.add_transition("nom_from_start", "starting", "nominating")
@@ -334,7 +335,7 @@ class Auction:
         if current_max_bid is None:
             return bid_amount
 
-        if bid_amount >= current_max_bid["amount"] and self.is_captain_all_in(bid_amount, captain) == True:
+        if bid_amount >= current_max_bid["amount"] and self.is_captain_all_in(bid_amount, captain):
             return bid_amount
 
         if bid_amount <= current_max_bid["amount"]:
@@ -503,7 +504,7 @@ class Auction:
 
         captain = self.search_captain(nomination.captain)
         captain["dollars"] += nomination.amount_paid
-        self.db["captians"] = self.captains
+        self.db["captains"] = self.captains
 
         player = self.search_player(nomination.player_name)
         player["is_picked"] = False
