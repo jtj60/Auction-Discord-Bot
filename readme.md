@@ -5,7 +5,7 @@ Developed for the PST division of RD2L, this bot handles the live player draft a
 The draft begins with the first captain in the list nominating a player, and these nomination rounds will continue until the playerlist is empty. If a captain does not nominate a player in time, the autonominator will select the highest remaining MMR player to be bid upon. Bidding starts off with 60 initial seconds (after a brief buffer phase so captains can see the player's information) and is reset after each bid. The timer decreases on subsequent bids. There are 4 'breaks' in the draft. These occur every PlayerCount/CaptainCount bidding rounds.
 
 Important Info:
-    - If captains are 'tied' for a player, the winner of that bid will be determined randomly.
+    -If captains are 'tied' for a player, the winner of that bid will be determined randomly.
     - If no captains bid on a player, the nominating captain will win the player (including autonominations).
     - Successful nominations and bids will result in a thumbs up bot reaction, thumbs down otherwise.
 
