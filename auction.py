@@ -23,7 +23,6 @@ from keep_alive import keep_alive
 
 intents = discord.Intents.default()
 intents.members = True
-intents.message_content = True
 client = commands.Bot(command_prefix='!', intents=intents)
 
 
@@ -318,18 +317,6 @@ class AuctionBot(commands.Cog):
         # should be able to run itself without human input.
         await self._transition_to_nominating_and_start_timer(ctx)
 
-    # async def bid_fun(self, ctx):
-    #     if self.auction.parse_message_for_names(ctx.message)['amount'] == 69:
-    #             await ctx.send(self.emojis["nice"])
-
-    #     if ctx.message.author == 'itachi':
-    #         await ctx.send(self.emojis['itachi'])
-        
-    #     if self.auction.parse_message_for_names(ctx.message)['player'] == 'Tree':
-    #         await ctx.author.send("STOP GRIEFING TREE")
-
-        #if self.auction.parse_message_for_names(ctx.message)['']
-
     @commands.command()
     async def nominate(self, ctx):
         log_command(ctx)
@@ -366,7 +353,6 @@ class AuctionBot(commands.Cog):
             return
         try:
             time_remaining = self.auction.bid(ctx.message)
-            # await self.bid_fun(ctx)
             if time_remaining is not None:
                 await ctx.message.add_reaction(self.emojis["plus"])
                 await ctx.send(f"{time_remaining} seconds left after latest bid.")
@@ -560,32 +546,8 @@ class AuctionBot(commands.Cog):
         elif msg.content.lower() == "n":
             await ctx.send("Nomination not reverted.")
 
-        
-    def undo_last_nomination_round(self, amount):
-        self.auction.pop_recent_nomination(amount)
-    
-    # def fix_bank(self, captain_name, amount):
-    #     captain = self.auction.search_captain(captain_name)
-    #     captain["dollars"] = amount
-    #     self.auction.db["captians"] = self.auction.captains
-    
-    # def fix_player_pool(self, player_name, captain_name):
-    #     player = self.auction.search_player(player_name)
-    #     captain = self.auction.search_captain(captain_name)
+if __name__ == "__main__":
+    client.add_cog(AuctionBot(client))
 
-    #     for nomination in self.auction.nominations:
-    #         if captain['name'] == nomination.captain and player['name'] == nomination.player:
-    #             player['is_picked'] = False
-
-
-# if __name__ == "__main__":
-#     client.add_cog(AuctionBot(client))
-
-#     # BOT TOKEN
-#     client.run(os.getenv("DISCORD_AUTH_TOKEN"))
-
-async def main():
-    async with client:
-        await client.add_cog(AuctionBot(client))
-        await client.start(os.getenv("DISCORD_AUTH_TOKEN"))
-asyncio.run(main())
+    # BOT TOKEN
+    client.run(os.getenv("DISCORD_AUTH_TOKEN"))
