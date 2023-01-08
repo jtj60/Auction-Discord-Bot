@@ -546,6 +546,7 @@ class AuctionBot(commands.Cog):
         elif msg.content.lower() == "n":
             await ctx.send("Nomination not reverted.")
 
+            
 if __name__ == "__main__":
     client.add_cog(AuctionBot(client))
 

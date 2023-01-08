@@ -1,7 +1,8 @@
-discord
-ipython
-pytest
-python-dotenv
-replit
-transitions
-python-slugify
+discord==1.7.3
+discord.py==1.7.3
+ipython==8.3.0
+pytest==7.1.2
+python-dotenv==0.20.0
+python-slugify==6.1.2
+replit==3.2.4
+transitions==0.8.11
