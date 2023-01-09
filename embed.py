@@ -77,11 +77,18 @@ def player_info(player):
     
 
 def winning_bid(nomination):
-    embed = discord.Embed(
-        title= 'Bidding Over!',
-        color=0xc27c0e,
-        description=f"{nomination.captain} has won the bidding on {nomination.player_name} for ${nomination.amount_paid}!",
-    )
+    if nomination.player_name == 'tornadospeed':
+        embed = discord.Embed(
+            title= 'Bidding Over!',
+            color=0xc27c0e,
+            description=f"{nomination.captain} has won the bidding on the cheater {nomination.player_name} for ${nomination.amount_paid}!",
+        )
+    else:
+        embed = discord.Embed(
+            title= 'Bidding Over!',
+            color=0xc27c0e,
+            description=f"{nomination.captain} has won the bidding on {nomination.player_name} for ${nomination.amount_paid}!",
+        )
     return embed
 
 
@@ -95,11 +102,18 @@ def display_transition_to_nomination(captain, timer):
 
 
 def display_successful_nomination(player, captain, timer):
-    embed = discord.Embed(
-        title=f"Nomination of {player['name']} by {captain['name']} successful!",
-        color=0xe91e63,
-        description=f'Bidding starts in {timer} seconds, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
-    )
+    if player['name'] == 'tornadospeed':
+        embed = discord.Embed(
+            title=f"Nomination of notorious cheater {player['name']} by {captain['name']} successful!",
+            color=0xe91e63,
+            description=f'Bidding starts in {timer} seconds, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
+        )
+    else:
+        embed = discord.Embed(
+            title=f"Nomination of {player['name']} by {captain['name']} successful!",
+            color=0xe91e63,
+            description=f'Bidding starts in {timer} seconds, {INITIAL_BID_TIMER_DEFAULT} seconds for the first bid.',
+        )
     return embed
 
 

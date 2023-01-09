@@ -21,6 +21,8 @@ import playerlist_util
 from lot import Lot
 from keep_alive import keep_alive
 
+import random
+
 intents = discord.Intents.default()
 intents.members = True
 client = commands.Bot(command_prefix='!', intents=intents)
@@ -345,6 +347,16 @@ class AuctionBot(commands.Cog):
     @commands.command()
     async def bid(self, ctx):
         log_command(ctx)
+
+        player_name = self.auction.current_lot.player
+        cheater_messages = [
+            "Are you sure? You know he cheated right?", 
+            "Well I guess you can bid on him. Not really sure why admins are even allowing him to play though.", 
+            "Hey maybe you can get Giant to play on his account!",
+            "I know I'm just a bot, but personally I probably wouldn't want to play with a cheater.",
+            "If you insist...",
+        ]
+
         if not self.whitelist(
             ctx,
             channel=[UserType.ADMIN, UserType.CAPTAIN],
@@ -356,6 +368,9 @@ class AuctionBot(commands.Cog):
             if time_remaining is not None:
                 await ctx.message.add_reaction(self.emojis["plus"])
                 await ctx.send(f"{time_remaining} seconds left after latest bid.")
+                if player_name == 'tornadospeed':
+                    cheater = random.choice(cheater_messages)
+                    await ctx.send(cheater)
         except AuctionValidationError as e:
             if e.client_message.type == ClientMessageType.CHANNEL_MESSAGE:
                 await ctx.send(e.client_message.data)
